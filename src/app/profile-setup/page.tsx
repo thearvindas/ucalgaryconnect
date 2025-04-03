@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 const INTERESTS = [
   { id: 'hackathons', label: 'Hackathons' },
@@ -31,10 +31,31 @@ export default function ProfileSetupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [userId, setUserId] = useState('');
+
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const supabase = getSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+        setUserId(session.user.id);
+      } catch (error) {
+        console.error('Error checking session:', error);
+        router.push('/login');
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   useEffect(() => {
     // Fetch available skills from Supabase
     async function fetchSkills() {
+      const supabase = getSupabase();
       const { data, error } = await supabase
         .from('skills_master')
         .select('skill_name')
@@ -57,18 +78,16 @@ export default function ProfileSetupPage() {
     setError('');
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('No user found');
-
+      const supabase = getSupabase();
       const { error } = await supabase
         .from('profiles')
         .upsert({
-          user_id: user.id,
+          user_id: userId,
           full_name: fullName,
           bio,
           skills,
           interests,
-          is_profile_complete: true
+          updated_at: new Date().toISOString(),
         });
 
       if (error) throw error;

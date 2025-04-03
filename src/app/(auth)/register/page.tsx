@@ -7,97 +7,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleRegister(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      setLoading(false);
+      return;
+    }
 
     try {
-      // Basic email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        throw new Error('Please enter a valid email address');
-      }
-
-      console.log('Attempting to register with email:', email);
-
-      // Register user with email confirmation disabled
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { name },
-          emailRedirectTo: undefined,
-        },
-      });
-
-      if (authError) {
-        console.error('Auth error details:', {
-          message: authError.message,
-          status: authError.status,
-          name: authError.name
-        });
-        
-        if (authError.message.includes('email')) {
-          throw new Error('Please try a different email address');
-        }
-        throw authError;
-      }
-
-      if (!authData.user) {
-        throw new Error('Failed to create user account');
-      }
-
-      console.log('User created successfully:', authData.user.id);
-
-      // Sign in the user immediately
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const supabase = getSupabase();
+      const { error } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (signInError) {
-        console.error('Sign in error:', signInError);
-        throw new Error('Failed to sign in after registration');
-      }
+      if (error) throw error;
 
-      // Create profile
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          user_id: authData.user.id,
-          name: name,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (profileError) {
-        console.error('Profile creation error details:', {
-          message: profileError.message,
-          details: profileError.details,
-          hint: profileError.hint,
-          code: profileError.code
-        });
-        throw new Error(`Failed to create profile: ${profileError.message}`);
-      }
-
-      console.log('Profile created successfully:', profileData);
-
-      // Redirect to profile setup
       router.push('/profile-setup');
-
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message);
@@ -107,7 +48,7 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <Card>
@@ -118,7 +59,7 @@ export default function RegisterPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleRegister} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
             <Input
@@ -145,6 +86,16 @@ export default function RegisterPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm-password">Confirm Password</Label>
+            <Input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
           </div>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +22,7 @@ export default function LoginPage() {
     setError('');
     
     try {
+      const supabase = getSupabase();
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,

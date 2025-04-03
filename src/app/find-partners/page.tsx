@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from '@/lib/supabase';
 import { useRouter } from "next/navigation";
 
 interface Profile {
@@ -24,36 +24,50 @@ export default function FindPartners() {
   const [error, setError] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchProfiles() {
+    const checkSession = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        const supabase = getSupabase();
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
           router.push('/login');
           return;
         }
+        setCurrentUserId(session.user.id);
+      } catch (error) {
+        console.error('Error checking session:', error);
+        router.push('/login');
+      }
+    };
 
+    checkSession();
+  }, [router]);
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      if (!currentUserId) return;
+
+      try {
+        const supabase = getSupabase();
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
-          .neq('user_id', user.id);
+          .neq('user_id', currentUserId);
 
         if (error) throw error;
+
         setProfiles(data || []);
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError('An unexpected error occurred');
-        }
+      } catch (error) {
+        console.error('Error fetching profiles:', error);
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     fetchProfiles();
-  }, [router]);
+  }, [currentUserId]);
 
   const filteredProfiles = profiles.filter(profile => {
     if (!searchTerm) return true;

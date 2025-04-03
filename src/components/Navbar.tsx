@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { supabase, isSupabaseInitialized } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
 export default function Navbar() {
@@ -13,8 +13,11 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Only run Supabase operations if properly initialized
-    if (!isSupabaseInitialized()) {
+    let supabase;
+    try {
+      supabase = getSupabase();
+    } catch (error) {
+      console.error('Failed to initialize Supabase:', error);
       setLoading(false);
       return;
     }
@@ -44,9 +47,8 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = async () => {
-    if (!isSupabaseInitialized()) return;
-
     try {
+      const supabase = getSupabase();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       router.push('/');
