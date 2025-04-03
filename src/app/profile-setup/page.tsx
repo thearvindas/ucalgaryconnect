@@ -50,41 +50,39 @@ export default function ProfileSetupPage() {
     fetchSkills();
   }, []);
 
-  async function handleSaveProfile(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
-
+    setError('');
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) throw new Error('User not authenticated');
+      if (!user) throw new Error('No user found');
 
-      // Update the profile
       const { error } = await supabase
         .from('profiles')
-        .update({
-          faculty,
-          major,
-          courses: courses.split(',').map(course => course.trim()),
+        .upsert({
+          user_id: user.id,
+          full_name,
+          bio,
           skills,
           interests,
-          bio,
-          is_profile_complete: true,
-          updated_at: new Date(),
-        })
-        .eq('user_id', user.id);
+          is_profile_complete: true
+        });
 
       if (error) throw error;
-
-      // Redirect to find partners page
+      
       router.push('/find-partners');
-    } catch (error: any) {
-      setError(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -96,7 +94,7 @@ export default function ProfileSetupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSaveProfile} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="faculty">Faculty</Label>
               <Input

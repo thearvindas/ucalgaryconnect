@@ -38,10 +38,15 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       router.push('/');
-    } catch (error) {
-      console.error('Error logging out:', error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error signing out:', error.message);
+      } else {
+        console.error('An unexpected error occurred while signing out');
+      }
     }
   };
 

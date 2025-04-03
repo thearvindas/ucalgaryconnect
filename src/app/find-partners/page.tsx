@@ -12,13 +12,12 @@ import { supabase } from '@/lib/supabase';
 interface Profile {
   id: string;
   user_id: string;
-  name: string;
-  faculty: string;
-  major: string;
-  courses: string[];
+  full_name: string;
+  bio: string;
   skills: string[];
   interests: string[];
-  bio: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function FindPartnersPage() {
@@ -84,7 +83,7 @@ export default function FindPartnersPage() {
   const filteredProfiles = profiles.filter(profile => {
     if (!searchTerm) return true;
 
-    const searchableText = `${profile.name} ${profile.faculty} ${profile.major} ${profile.bio || ''} ${profile.courses.join(' ')} ${profile.skills.join(' ')}`;
+    const searchableText = `${profile.full_name} ${profile.bio || ''} ${profile.skills.join(' ')}`;
     return searchableText.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
@@ -102,7 +101,7 @@ export default function FindPartnersPage() {
       <div className="flex flex-col md:flex-row gap-4 mb-8">
         <div className="flex-grow">
           <Input
-            placeholder="Search by name, faculty, skills, courses..."
+            placeholder="Search by name, skills, bio..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full"
@@ -140,21 +139,9 @@ export default function FindPartnersPage() {
           {filteredProfiles.map(profile => (
             <Card key={profile.id} className="h-full flex flex-col">
               <CardHeader>
-                <CardTitle className="text-xl text-purple-600">{profile.name}</CardTitle>
-                <CardDescription>{profile.faculty} - {profile.major}</CardDescription>
+                <CardTitle className="text-xl text-purple-600">{profile.full_name}</CardTitle>
               </CardHeader>
               <CardContent className="flex-grow">
-                {profile.courses && profile.courses.length > 0 && (
-                  <div className="mb-4">
-                    <h4 className="font-medium mb-2">Courses:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {profile.courses.map(course => (
-                        <Badge key={course} variant="outline">{course}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {profile.skills && profile.skills.length > 0 && (
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">Skills:</h4>

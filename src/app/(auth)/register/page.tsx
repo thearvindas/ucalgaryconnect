@@ -98,9 +98,12 @@ export default function RegisterPage() {
       // Redirect to profile setup
       router.push('/profile-setup');
 
-    } catch (error: any) {
-      console.error('Registration error:', error);
-      setError(error.message || 'An unexpected error occurred');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }

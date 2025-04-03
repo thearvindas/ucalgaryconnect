@@ -16,40 +16,30 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
     setLoading(true);
-
+    setError('');
+    
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
-
-      // Check if profile setup is complete
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_profile_complete')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (profileError) throw profileError;
-
-      // Redirect based on profile completion status
-      if (profileData.is_profile_complete) {
-        router.push('/find-partners');
+      
+      router.push('/find-partners');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setError(error.message);
       } else {
-        router.push('/profile-setup');
+        setError('An unexpected error occurred');
       }
-    } catch (error: any) {
-      setError(error.message);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <Card>
@@ -60,7 +50,7 @@ export default function LoginPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -95,9 +85,9 @@ export default function LoginPage() {
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
-          <Link href="/register" className="text-purple-600 hover:underline">
-            Register
+          Don&apos;t have an account?{' '}
+          <Link href="/register" className="text-blue-600 hover:text-blue-800">
+            Register here
           </Link>
         </p>
       </CardFooter>

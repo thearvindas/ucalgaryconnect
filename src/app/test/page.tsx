@@ -2,33 +2,36 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function TestPage() {
-  const [message, setMessage] = useState('Testing connection...');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
+  const router = useRouter();
 
   useEffect(() => {
-    async function testConnection() {
+    async function checkAuth() {
       try {
-        const { data, error } = await supabase
-          .from('skills_master')
-          .select('*')
-          .limit(1);
-
+        const { error } = await supabase.auth.getUser();
         if (error) throw error;
-
-        setMessage('Connection successful! Found skills in the database.');
-      } catch (error: any) {
-        setMessage(`Connection failed: ${error.message}`);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('An unexpected error occurred');
+        }
+      } finally {
+        setLoading(false);
       }
     }
 
-    testConnection();
+    checkAuth();
   }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">Supabase Connection Test</h1>
-      <p className="text-gray-600">{message}</p>
+      <p className="text-gray-600">{error}</p>
     </div>
   );
 } 
