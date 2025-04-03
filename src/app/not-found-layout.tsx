@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import NavbarWrapper from "@/components/NavbarWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "UCalgaryConnect",
-  description: "Connect with fellow University of Calgary students",
+  title: "404 - Page Not Found | UCalgaryConnect",
+  description: "The page you're looking for doesn't exist",
 };
 
-export default function RootLayout({
+export default function NotFoundLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -18,7 +17,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <NavbarWrapper />
         <main className="min-h-screen bg-gray-50">
           {children}
         </main>
@@ -31,4 +29,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+} 
