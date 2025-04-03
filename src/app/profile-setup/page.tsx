@@ -21,6 +21,7 @@ const INTERESTS = [
 
 export default function ProfileSetupPage() {
   const router = useRouter();
+  const [fullName, setFullName] = useState('');
   const [faculty, setFaculty] = useState('');
   const [major, setMajor] = useState('');
   const [courses, setCourses] = useState('');
@@ -63,7 +64,7 @@ export default function ProfileSetupPage() {
         .from('profiles')
         .upsert({
           user_id: user.id,
-          full_name,
+          full_name: fullName,
           bio,
           skills,
           interests,
@@ -95,6 +96,17 @@ export default function ProfileSetupPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="e.g., John Doe"
+                required
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="faculty">Faculty</Label>
               <Input
