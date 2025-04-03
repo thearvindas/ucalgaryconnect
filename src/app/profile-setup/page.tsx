@@ -66,7 +66,7 @@ export default function ProfileSetupPage() {
         return;
       }
 
-      setAvailableSkills(data.map(skill => skill.skill_name));
+      setAvailableSkills((data || []).map(skill => skill.skill_name as string));
     }
 
     fetchSkills();
