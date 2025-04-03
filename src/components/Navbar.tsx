@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseInitialized } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
 export default function Navbar() {
@@ -13,6 +13,12 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Only run Supabase operations if properly initialized
+    if (!isSupabaseInitialized()) {
+      setLoading(false);
+      return;
+    }
+
     // Check current session
     const checkSession = async () => {
       try {
@@ -38,6 +44,8 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = async () => {
+    if (!isSupabaseInitialized()) return;
+
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
