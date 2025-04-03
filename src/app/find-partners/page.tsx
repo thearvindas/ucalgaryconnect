@@ -58,9 +58,14 @@ export default function FindPartners() {
 
         if (error) throw error;
 
-        setProfiles(data || []);
+        setProfiles((data || []) as unknown as Profile[]);
       } catch (error) {
         console.error('Error fetching profiles:', error);
+        if (error instanceof Error) {
+          setError(error.message);
+        } else {
+          setError('An unexpected error occurred while fetching profiles');
+        }
       } finally {
         setLoading(false);
       }

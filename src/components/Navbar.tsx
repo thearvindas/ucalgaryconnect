@@ -10,7 +10,6 @@ import { User } from '@supabase/supabase-js';
 export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -51,10 +50,6 @@ export default function Navbar() {
       console.error('Error signing out:', error);
     }
   };
-
-  if (loading) {
-    return null; // Don't render anything while loading
-  }
 
   return (
     <nav className="bg-white shadow-sm">
