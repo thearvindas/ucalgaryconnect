@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 
 export default function TestPage() {
   const [error, setError] = useState<string>('');
@@ -9,6 +9,7 @@ export default function TestPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
+        const supabase = getSupabase();
         const { error } = await supabase.auth.getUser();
         if (error) throw error;
       } catch (error: unknown) {

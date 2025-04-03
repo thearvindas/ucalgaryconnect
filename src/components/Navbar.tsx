@@ -13,32 +13,27 @@ export default function Navbar() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let supabase;
-    try {
-      supabase = getSupabase();
-    } catch (error) {
-      console.error('Failed to initialize Supabase:', error);
-      setLoading(false);
-      return;
-    }
-
-    // Check current session
     const checkSession = async () => {
       try {
+        const supabase = getSupabase();
         const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user || null);
+        if (session) {
+          setUser(session.user);
+        }
       } catch (error) {
         console.error('Error checking session:', error);
-      } finally {
-        setLoading(false);
       }
     };
 
     checkSession();
 
-    // Subscribe to auth changes
+    const supabase = getSupabase();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
+      if (session) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
     });
 
     return () => {
@@ -46,18 +41,14 @@ export default function Navbar() {
     };
   }, []);
 
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     try {
       const supabase = getSupabase();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      router.push('/');
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('Error signing out:', error.message);
-      } else {
-        console.error('An unexpected error occurred while signing out');
-      }
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
 
@@ -91,7 +82,7 @@ export default function Navbar() {
                   {user.email}
                 </span>
                 <Button
-                  onClick={handleLogout}
+                  onClick={handleSignOut}
                   variant="outline"
                   className="text-red-600 hover:text-red-700"
                 >
