@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation';
 
 export default function TestPage() {
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const router = useRouter();
 
   useEffect(() => {
     async function checkAuth() {
@@ -20,8 +17,6 @@ export default function TestPage() {
         } else {
           setError('An unexpected error occurred');
         }
-      } finally {
-        setLoading(false);
       }
     }
 

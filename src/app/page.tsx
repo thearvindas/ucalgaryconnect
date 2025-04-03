@@ -12,8 +12,9 @@ export default function Home() {
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
               Connect with Fellow <span className="text-purple-600">UCalgary</span> Students
             </h1>
-            <p className="text-xl text-gray-600 mb-8">
-              Find study partners, join projects, and collaborate with students who share your interests and goals.
+            <p className="text-lg text-gray-600 mb-8">
+              Connect with fellow students, share your interests, and find the perfect study partners for your courses.
+              Don&apos;t miss out on the opportunity to enhance your academic journey!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/register">
