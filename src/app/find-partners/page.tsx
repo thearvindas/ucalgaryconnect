@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 
 interface Profile {
   id: string;
+  user_id: string;
   name: string;
   faculty: string;
   major: string;
@@ -20,20 +22,45 @@ interface Profile {
 }
 
 export default function FindPartnersPage() {
+  const router = useRouter();
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [facultyFilter, setFacultyFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Check authentication and fetch user data
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+        setCurrentUser(session.user);
+      } catch (error) {
+        console.error('Error checking auth:', error);
+        router.push('/login');
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // Fetch profiles when currentUser is available
   useEffect(() => {
     async function fetchProfiles() {
+      if (!currentUser) return;
+
       setLoading(true);
       try {
         let query = supabase
           .from('profiles')
           .select('*')
-          .eq('is_profile_complete', true);
+          .eq('is_profile_complete', true)
+          .neq('user_id', currentUser.id); // Exclude current user
 
         if (facultyFilter && facultyFilter !== 'all') {
           query = query.eq('faculty', facultyFilter);
@@ -52,7 +79,7 @@ export default function FindPartnersPage() {
     }
 
     fetchProfiles();
-  }, [facultyFilter]);
+  }, [facultyFilter, currentUser]);
 
   const filteredProfiles = profiles.filter(profile => {
     if (!searchTerm) return true;
@@ -62,6 +89,10 @@ export default function FindPartnersPage() {
   });
 
   const uniqueFaculties = Array.from(new Set(profiles.map(profile => profile.faculty))).filter(Boolean);
+
+  if (!currentUser) {
+    return null; // Don't render anything while checking auth
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
