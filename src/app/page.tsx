@@ -56,7 +56,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Share your expertise and learn from others. Whether you're looking to teach or learn, find the perfect match.
+                  Share your expertise and learn from others. Whether you&apos;re looking to teach or learn, find the perfect match.
                 </p>
               </CardContent>
             </Card>
