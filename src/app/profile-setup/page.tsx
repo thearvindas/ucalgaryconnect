@@ -78,8 +78,12 @@ export default function ProfileSetupPage() {
     setCoursesInput(value);
     const courseArray = value
       .split(',')
-      .map((course: string) => course.trim())
-      .filter((course: string) => course !== '');
+      .map(course => course.trim())
+      .filter(course => {
+        // Validate course format: 4 letters + space + 3 numbers
+        const isValidFormat = /^[A-Z]{4}\s\d{3}$/.test(course.trim());
+        return course !== '' && isValidFormat;
+      });
     setCourses(courseArray);
   };
 
@@ -108,27 +112,51 @@ export default function ProfileSetupPage() {
         full_name: fullName.trim(),
         faculty: faculty.trim(),
         major: major.trim(),
-        courses,
-        bio: bio.trim(),
-        skills,
-        interests,
-        updated_at: new Date().toISOString(),
+        courses: courses || [], // Ensure courses is an array
+        bio: bio.trim() || null, // Use null for empty bio
+        skills: skills || [], // Ensure skills is an array
+        interests: interests || [], // Ensure interests is an array
+        updated_at: new Date().toISOString()
       };
 
       console.log('Submitting profile data:', profileData);
 
-      const { data, error: upsertError } = await supabase
+      // First try to select the profile to see if it exists
+      const { data: existingProfile, error: selectError } = await supabase
         .from('profiles')
-        .upsert(profileData)
         .select()
+        .eq('user_id', session.user.id)
         .single();
 
-      if (upsertError) {
-        console.error('Supabase upsert error:', upsertError);
-        throw upsertError;
+      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 means no rows returned
+        console.error('Error checking existing profile:', selectError);
+        throw selectError;
       }
 
-      console.log('Profile created/updated successfully:', data);
+      let result;
+      if (existingProfile) {
+        // Update existing profile
+        result = await supabase
+          .from('profiles')
+          .update(profileData)
+          .eq('user_id', session.user.id)
+          .select()
+          .single();
+      } else {
+        // Insert new profile
+        result = await supabase
+          .from('profiles')
+          .insert(profileData)
+          .select()
+          .single();
+      }
+
+      if (result.error) {
+        console.error('Supabase operation error:', result.error);
+        throw result.error;
+      }
+
+      console.log('Profile created/updated successfully:', result.data);
       router.push('/find-partners');
     } catch (error: unknown) {
       console.error('Profile setup error:', error);
@@ -194,9 +222,10 @@ export default function ProfileSetupPage() {
                 id="courses"
                 value={coursesInput}
                 onChange={handleCoursesChange}
-                placeholder="e.g., OBHR 674, MGST 611"
+                placeholder="e.g., ENTI 674, MGST 611"
                 required
               />
+              <p className="text-sm text-gray-500">Format: DEPT 123 (e.g., ENTI 674)</p>
             </div>
 
             <div className="space-y-2">
