@@ -29,10 +29,9 @@ export default function ProfileSetupPage() {
   const [skills, setSkills] = useState<string[]>([]);
   const [interests, setInterests] = useState<string[]>([]);
   const [bio, setBio] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
-  const [userId, setUserId] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -43,7 +42,6 @@ export default function ProfileSetupPage() {
           router.push('/login');
           return;
         }
-        setUserId(session.user.id);
       } catch (error) {
         console.error('Error checking session:', error);
         router.push('/login');
