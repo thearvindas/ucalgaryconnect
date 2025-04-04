@@ -24,8 +24,8 @@ export default function ProfileSetupPage() {
   const [fullName, setFullName] = useState('');
   const [faculty, setFaculty] = useState('');
   const [major, setMajor] = useState('');
-  const [courses, setCourses] = useState<string[]>([]);
   const [coursesInput, setCoursesInput] = useState('');
+  const [courses, setCourses] = useState<string[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [interests, setInterests] = useState<string[]>([]);
   const [bio, setBio] = useState('');
@@ -74,12 +74,12 @@ export default function ProfileSetupPage() {
   }, []);
 
   const handleCoursesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCoursesInput(e.target.value);
-    // Split by comma, trim whitespace, and filter out empty strings
-    const courseArray = e.target.value
+    const value = e.target.value;
+    setCoursesInput(value);
+    const courseArray = value
       .split(',')
-      .map(course => course.trim())
-      .filter(course => course !== '');
+      .map((course: string) => course.trim())
+      .filter((course: string) => course !== '');
     setCourses(courseArray);
   };
 
@@ -91,37 +91,44 @@ export default function ProfileSetupPage() {
     try {
       const supabase = getSupabase();
       
-      // Log the session state
+      // Get current session
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('Current session:', session);
-      
-      // Log the data being submitted
+      if (!session) {
+        throw new Error('No session found. Please log in again.');
+      }
+
+      // Validate required fields
+      if (!fullName.trim()) throw new Error('Full name is required');
+      if (!faculty.trim()) throw new Error('Faculty is required');
+      if (!major.trim()) throw new Error('Major is required');
+
+      // Prepare profile data
       const profileData = {
-        user_id: userId,
-        full_name: fullName,
-        faculty,
-        major,
+        user_id: session.user.id,
+        full_name: fullName.trim(),
+        faculty: faculty.trim(),
+        major: major.trim(),
         courses,
-        bio,
+        bio: bio.trim(),
         skills,
         interests,
         updated_at: new Date().toISOString(),
       };
+
       console.log('Submitting profile data:', profileData);
 
-      const { data, error } = await supabase
+      const { data, error: upsertError } = await supabase
         .from('profiles')
         .upsert(profileData)
         .select()
         .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+      if (upsertError) {
+        console.error('Supabase upsert error:', upsertError);
+        throw upsertError;
       }
 
       console.log('Profile created/updated successfully:', data);
-      
       router.push('/find-partners');
     } catch (error: unknown) {
       console.error('Profile setup error:', error);
