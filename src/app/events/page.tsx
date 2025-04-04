@@ -22,65 +22,32 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const fetchEvents = async () => {
-    try {
-      const supabase = getSupabase();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        console.log('No active session found');
-        router.push('/login');
-        return;
-      }
-
-      console.log('Fetching events...');
-
-      // First, let's just try to fetch all events without ordering
-      const { data: eventsData, error } = await supabase
-        .from('events')
-        .select('*');
-
-      if (error) {
-        console.error('Error fetching events:', error);
-        console.error('Error details:', {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
-        throw error;
-      }
-
-      console.log('Raw events data:', eventsData);
-
-      // Sort events after fetching
-      const sortedEvents = eventsData?.sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-
-      // Format events
-      const formattedEvents = sortedEvents?.map(event => ({
-        id: event.id,
-        title: event.title,
-        date: new Date(event.date).toLocaleDateString(),
-        time: new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        location: event.location || 'Location TBD',
-        description: event.description || ''
-      })) || [];
-
-      console.log('Formatted events:', formattedEvents);
-      setEvents(formattedEvents);
-    } catch (error) {
-      console.error('Error in fetchEvents:', error);
-      setError('Failed to load events');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const supabase = getSupabase();
+        const { data: eventsData, error: eventsError } = await supabase
+          .from('events')
+          .select('*');
+
+        if (eventsError) {
+          setError('Failed to fetch events');
+          console.error('Error fetching events:', eventsError);
+          return;
+        }
+
+        setEvents(eventsData || []);
+      } catch (error) {
+        setError('An unexpected error occurred');
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchEvents();
-  }, [fetchEvents]);
+  }, []);
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading events...</div>;

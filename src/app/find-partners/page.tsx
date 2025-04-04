@@ -31,72 +31,43 @@ export default function FindPartners() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const checkSession = async () => {
+    const checkSessionAndFetchPartners = async () => {
       const { data: { session } } = await getSupabase().auth.getSession();
       if (!session) {
         router.push('/login');
       } else {
         setCurrentUserId(session.user.id);
-        await fetchPartners();
-      }
-    };
-    checkSession();
-  }, [router, fetchPartners]);
+        try {
+          const supabase = getSupabase();
+          const { data: connectionsData } = await supabase
+            .from('connections')
+            .select('connected_user_id')
+            .eq('user_id', session.user.id);
 
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      if (!currentUserId) return;
+          const connectedUserIds = new Set(connectionsData?.map(conn => conn.connected_user_id) || []);
 
-      try {
-        const supabase = getSupabase();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.push('/login');
-          return;
+          const { data: profiles, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .neq('id', session.user.id);
+
+          if (error) {
+            console.error('Error fetching partners:', error);
+            return;
+          }
+
+          const availablePartners = profiles?.filter(profile => !connectedUserIds.has(profile.id)) || [];
+          setProfiles(availablePartners);
+        } catch (error) {
+          console.error('Error:', error);
+        } finally {
+          setLoading(false);
         }
-
-        // First, get all existing connections (both accepted and pending)
-        const { data: connectionsData, error: connectionsError } = await supabase
-          .from('connections')
-          .select('user_id, connected_user_id')
-          .or(`user_id.eq.${session.user.id},connected_user_id.eq.${session.user.id}`);
-
-        if (connectionsError) {
-          console.error('Error fetching connections:', connectionsError);
-          return;
-        }
-
-        // Create a set of all user IDs we're connected with
-        const connectedUserIds = new Set(
-          connectionsData?.map(conn => 
-            conn.user_id === session.user.id ? conn.connected_user_id : conn.user_id
-          ) || []
-        );
-
-        // Then fetch profiles excluding connected users
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .neq('user_id', session.user.id)
-          .not('user_id', 'in', `(${Array.from(connectedUserIds).join(',')})`)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setProfiles(profiles || []);
-      } catch (error) {
-        console.error('Error fetching profiles:', error);
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError('An unexpected error occurred while fetching profiles');
-        }
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchProfiles();
-  }, [currentUserId]);
+    checkSessionAndFetchPartners();
+  }, [router]);
 
   const filteredProfiles = profiles.filter(profile => {
     if (!searchTerm) return true;

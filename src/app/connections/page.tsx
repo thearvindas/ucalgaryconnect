@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,12 +25,12 @@ interface Connection {
 
 export default function ConnectionsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
-  const [pendingRequests, _setPendingRequests] = useState<Connection[]>([]);
+  const [pendingRequests] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const fetchConnections = async () => {
+  const fetchConnections = useCallback(async () => {
     try {
       const supabase = getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
@@ -96,7 +96,7 @@ export default function ConnectionsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
     fetchConnections();

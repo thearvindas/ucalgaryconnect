@@ -21,10 +21,8 @@ export default function StudyGroups() {
   const [groups, setGroups] = useState<StudyGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [_error, setError] = useState<string | null>(null);
 
-  // Sample study groups data - replace with actual data from Supabase later
-  const SAMPLE_GROUPS: StudyGroup[] = [
+  const SAMPLE_GROUPS = [
     {
       id: '1',
       name: 'CPSC 471 Database Study Group',
@@ -72,7 +70,6 @@ export default function StudyGroups() {
   );
 
   if (loading) return <div className="container mx-auto px-4 py-8">Loading study groups...</div>;
-  if (_error) return <div className="container mx-auto px-4 py-8 text-red-500">{_error}</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

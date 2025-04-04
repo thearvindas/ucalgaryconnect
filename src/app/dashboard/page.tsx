@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,12 +45,11 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({
     activeConnections: 0,
     pendingRequests: 0,
-    recentActivities: 0,
     upcomingEvents: 0
   });
   const [events, setEvents] = useState<Event[]>([]);
 
-  const fetchConnections = async () => {
+  const fetchConnections = useCallback(async () => {
     try {
       const supabase = getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
@@ -91,10 +90,53 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error in fetchConnections:', error);
     }
-  };
+  }, [router]);
+
+  const fetchEvents = useCallback(async () => {
+    try {
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        router.push('/login');
+        return;
+      }
+
+      // Fetch events
+      const { data: eventsData, error } = await supabase
+        .from('events')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching events:', error);
+        setUpcomingEvents([]);
+        return;
+      }
+
+      // Sort events by date
+      const sortedEvents = eventsData?.sort((a, b) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+      // Format events
+      const formattedEvents = sortedEvents?.map(event => ({
+        id: event.id,
+        title: event.title,
+        date: new Date(event.date).toLocaleDateString(),
+        time: new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        location: event.location || 'Location TBD'
+      })) || [];
+
+      setUpcomingEvents(formattedEvents);
+      setStats(prev => ({ ...prev, upcomingEvents: formattedEvents.length }));
+    } catch (error) {
+      console.error('Error fetching events:', error);
+      setUpcomingEvents([]);
+    }
+  }, [router]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const initializeDashboard = async () => {
       try {
         setLoading(true);
         const supabase = getSupabase();
@@ -128,9 +170,8 @@ export default function DashboardPage() {
         setLoading(false);
       }
     };
-
-    fetchData();
-  }, []);
+    initializeDashboard();
+  }, [fetchConnections, fetchEvents, router]);
 
   const calculateProfileCompletion = (profile: Profile): number => {
     if (!profile) return 0;
@@ -179,49 +220,6 @@ export default function DashboardPage() {
     return totalPoints === 0 ? 0 : Math.round((matchPoints / totalPoints) * 100);
   };
 
-  const fetchEvents = async () => {
-    try {
-      const supabase = getSupabase();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      // Fetch events
-      const { data: eventsData, error } = await supabase
-        .from('events')
-        .select('*');
-
-      if (error) {
-        console.error('Error fetching events:', error);
-        setUpcomingEvents([]);
-        return;
-      }
-
-      // Sort events by date
-      const sortedEvents = eventsData?.sort((a, b) => 
-        new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-
-      // Format events
-      const formattedEvents = sortedEvents?.map(event => ({
-        id: event.id,
-        title: event.title,
-        date: new Date(event.date).toLocaleDateString(),
-        time: new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        location: event.location || 'Location TBD'
-      })) || [];
-
-      setUpcomingEvents(formattedEvents);
-      setStats(prev => ({ ...prev, upcomingEvents: formattedEvents.length }));
-    } catch (error) {
-      console.error('Error fetching events:', error);
-      setUpcomingEvents([]);
-    }
-  };
-
   const fetchActivities = async () => {
     try {
       const supabase = getSupabase();
@@ -267,12 +265,6 @@ export default function DashboardPage() {
       setActivities([]);
     }
   };
-
-  useEffect(() => {
-    fetchConnections();
-    fetchEvents();
-    router.refresh();
-  }, [fetchConnections, fetchEvents, router]);
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading dashboard...</div>;
