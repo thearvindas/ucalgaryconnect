@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <NavbarWrapper />
-        <main className="min-h-screen bg-gray-50">
+        <main className="pt-16">
           {children}
         </main>
         <footer className="bg-white border-t py-8">

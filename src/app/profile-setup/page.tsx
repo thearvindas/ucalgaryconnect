@@ -42,6 +42,30 @@ export default function ProfileSetupPage() {
           router.push('/login');
           return;
         }
+
+        // Fetch existing profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('Error fetching profile:', profileError);
+          return;
+        }
+
+        if (profileData) {
+          // Populate form with existing data
+          setFullName(profileData.full_name || '');
+          setFaculty(profileData.faculty || '');
+          setMajor(profileData.major || '');
+          setCoursesInput(profileData.courses?.join(', ') || '');
+          setCourses(profileData.courses || []);
+          setBio(profileData.bio || '');
+          setSkills(profileData.skills || []);
+          setInterests(profileData.interests || []);
+        }
       } catch (error) {
         console.error('Error checking session:', error);
         router.push('/login');

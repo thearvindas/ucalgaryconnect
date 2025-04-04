@@ -52,17 +52,26 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white shadow-sm">
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-center">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
             <Link href="/" className="text-xl font-bold text-purple-600">
               UCalgaryConnect
             </Link>
             {user && (
               <>
+                <Link href="/dashboard" className="text-gray-600 hover:text-purple-600">
+                  Dashboard
+                </Link>
                 <Link href="/find-partners" className="text-gray-600 hover:text-purple-600">
                   Find Partners
+                </Link>
+                <Link href="/connections" className="text-gray-600 hover:text-purple-600">
+                  Connections
+                </Link>
+                <Link href="/events" className="text-gray-600 hover:text-purple-600">
+                  Events
                 </Link>
                 <Link href="/profile-setup" className="text-gray-600 hover:text-purple-600">
                   My Profile
