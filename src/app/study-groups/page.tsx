@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { getSupabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
 
 interface StudyGroup {
   id: string;
@@ -18,11 +17,11 @@ interface StudyGroup {
   created_by: string;
 }
 
-export default function StudyGroupsPage() {
-  const [studyGroups, setStudyGroups] = useState<StudyGroup[]>([]);
+export default function StudyGroups() {
+  const [groups, setGroups] = useState<StudyGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
 
   // Sample study groups data - replace with actual data from Supabase later
   const SAMPLE_GROUPS: StudyGroup[] = [
@@ -62,18 +61,18 @@ export default function StudyGroupsPage() {
   ];
 
   useEffect(() => {
-    setStudyGroups(SAMPLE_GROUPS);
+    setGroups(SAMPLE_GROUPS);
     setLoading(false);
   }, []);
 
-  const filteredGroups = studyGroups.filter(group =>
+  const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     group.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
     group.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) return <div className="container mx-auto px-4 py-8">Loading study groups...</div>;
-  if (error) return <div className="container mx-auto px-4 py-8 text-red-500">{error}</div>;
+  if (_error) return <div className="container mx-auto px-4 py-8 text-red-500">{_error}</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getSupabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Users, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -22,20 +22,9 @@ interface Profile {
 
 interface Activity {
   id: string;
-  type: 'connection' | 'study' | 'message';
-  message: string;
+  type: string;
+  description: string;
   timestamp: string;
-}
-
-interface ConnectionActivity {
-  id: string;
-  user_id: string;
-  connected_user_id: string;
-  status: 'pending' | 'accepted' | 'declined';
-  created_at: string;
-  profile: {
-    full_name: string;
-  } | null;
 }
 
 interface Event {
@@ -59,6 +48,7 @@ export default function DashboardPage() {
     recentActivities: 0,
     upcomingEvents: 0
   });
+  const [events, setEvents] = useState<Event[]>([]);
 
   const fetchConnections = async () => {
     try {
@@ -265,7 +255,7 @@ export default function DashboardPage() {
       const connectionActivities: Activity[] = connectionsData?.map(conn => ({
         id: conn.id,
         type: 'connection' as const,
-        message: conn.status === 'accepted' 
+        description: conn.status === 'accepted' 
           ? `Connected with ${conn.profile.full_name}`
           : `New connection request from ${conn.profile.full_name}`,
         timestamp: new Date(conn.created_at).toLocaleDateString()
@@ -277,6 +267,12 @@ export default function DashboardPage() {
       setActivities([]);
     }
   };
+
+  useEffect(() => {
+    fetchConnections();
+    fetchEvents();
+    router.refresh();
+  }, [fetchConnections, fetchEvents, router]);
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading dashboard...</div>;
@@ -357,6 +353,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <p className="text-sm text-muted-foreground">You&apos;re making great progress! Keep building those connections!</p>
     </div>
   );
 } 

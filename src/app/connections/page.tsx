@@ -25,7 +25,7 @@ interface Connection {
 
 export default function ConnectionsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<Connection[]>([]);
+  const [pendingRequests, _setPendingRequests] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -42,20 +42,6 @@ export default function ConnectionsPage() {
       }
 
       console.log('Fetching connections for user:', session.user.id);
-
-      // First, let's test if we can access the connections table
-      const { data: testConnections, error: testError } = await supabase
-        .from('connections')
-        .select('id')
-        .or(`user_id.eq.${session.user.id},connected_user_id.eq.${session.user.id}`)
-        .limit(1);
-
-      if (testError) {
-        console.error('Error testing connections access:', testError);
-        throw new Error('Failed to access connections table');
-      }
-
-      console.log('Successfully accessed connections table');
 
       // Now fetch connections with a simpler query first
       const { data: connectionsData, error: connectionsError } = await supabase
@@ -114,7 +100,7 @@ export default function ConnectionsPage() {
 
   useEffect(() => {
     fetchConnections();
-  }, [router]);
+  }, [fetchConnections]);
 
   const handleAccept = async (connectionId: string) => {
     try {

@@ -22,11 +22,6 @@ interface Profile {
   courses: string[];
 }
 
-interface Connection {
-  user_id: string;
-  connected_user_id: string;
-}
-
 export default function FindPartners() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,22 +32,16 @@ export default function FindPartners() {
 
   useEffect(() => {
     const checkSession = async () => {
-      try {
-        const supabase = getSupabase();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          router.push('/login');
-          return;
-        }
-        setCurrentUserId(session.user.id);
-      } catch (error) {
-        console.error('Error checking session:', error);
+      const { data: { session } } = await getSupabase().auth.getSession();
+      if (!session) {
         router.push('/login');
+      } else {
+        setCurrentUserId(session.user.id);
+        await fetchPartners();
       }
     };
-
     checkSession();
-  }, [router]);
+  }, [router, fetchPartners]);
 
   useEffect(() => {
     const fetchProfiles = async () => {

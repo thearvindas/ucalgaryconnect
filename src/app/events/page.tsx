@@ -22,10 +22,6 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
   const fetchEvents = async () => {
     try {
       const supabase = getSupabase();
@@ -81,6 +77,10 @@ export default function EventsPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading events...</div>;
