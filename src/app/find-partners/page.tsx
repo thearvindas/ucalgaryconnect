@@ -23,46 +23,44 @@ interface Profile {
 }
 
 export default function FindPartners() {
+  const router = useRouter();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const router = useRouter();
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const checkSessionAndFetchPartners = async () => {
-      const { data: { session } } = await getSupabase().auth.getSession();
-      if (!session) {
-        router.push('/login');
-      } else {
-        setCurrentUserId(session.user.id);
-        try {
-          const supabase = getSupabase();
-          const { data: connectionsData } = await supabase
-            .from('connections')
-            .select('connected_user_id')
-            .eq('user_id', session.user.id);
-
-          const connectedUserIds = new Set(connectionsData?.map(conn => conn.connected_user_id) || []);
-
-          const { data: profiles, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .neq('id', session.user.id);
-
-          if (error) {
-            console.error('Error fetching partners:', error);
-            return;
-          }
-
-          const availablePartners = profiles?.filter(profile => !connectedUserIds.has(profile.id)) || [];
-          setProfiles(availablePartners);
-        } catch (error) {
-          console.error('Error:', error);
-        } finally {
-          setLoading(false);
+      try {
+        const { data: { session } } = await getSupabase().auth.getSession();
+        if (!session) {
+          router.push('/login');
+          return;
         }
+
+        const supabase = getSupabase();
+        const { data: connectionsData } = await supabase
+          .from('connections')
+          .select('connected_user_id')
+          .eq('user_id', session.user.id);
+
+        const connectedUserIds = new Set(connectionsData?.map(conn => conn.connected_user_id) || []);
+
+        const { data: profiles, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .neq('user_id', session.user.id);
+
+        if (error) {
+          console.error('Error fetching partners:', error);
+          return;
+        }
+
+        const availablePartners = profiles?.filter(profile => !connectedUserIds.has(profile.id)) || [];
+        setProfiles(availablePartners);
+      } catch (error) {
+        console.error('Error:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -70,9 +68,9 @@ export default function FindPartners() {
   }, [router]);
 
   const filteredProfiles = profiles.filter(profile => {
-    if (!searchTerm) return true;
+    if (!searchQuery) return true;
     const searchableText = `${profile.full_name} ${profile.bio || ''} ${profile.skills.join(' ')}`;
-    return searchableText.toLowerCase().includes(searchTerm.toLowerCase());
+    return searchableText.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const handleConnect = async (partnerId: string) => {
@@ -127,21 +125,13 @@ export default function FindPartners() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <p className="text-center text-red-600">{error}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <Input
           placeholder="Search by name, skills, bio..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           className="max-w-md mx-auto"
         />
       </div>
