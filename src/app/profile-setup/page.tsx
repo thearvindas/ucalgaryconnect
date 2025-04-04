@@ -24,7 +24,8 @@ export default function ProfileSetupPage() {
   const [fullName, setFullName] = useState('');
   const [faculty, setFaculty] = useState('');
   const [major, setMajor] = useState('');
-  const [courses, setCourses] = useState('');
+  const [courses, setCourses] = useState<string[]>([]);
+  const [coursesInput, setCoursesInput] = useState('');
   const [skills, setSkills] = useState<string[]>([]);
   const [interests, setInterests] = useState<string[]>([]);
   const [bio, setBio] = useState('');
@@ -72,6 +73,16 @@ export default function ProfileSetupPage() {
     fetchSkills();
   }, []);
 
+  const handleCoursesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCoursesInput(e.target.value);
+    // Split by comma, trim whitespace, and filter out empty strings
+    const courseArray = e.target.value
+      .split(',')
+      .map(course => course.trim())
+      .filter(course => course !== '');
+    setCourses(courseArray);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -79,25 +90,45 @@ export default function ProfileSetupPage() {
     
     try {
       const supabase = getSupabase();
+      console.log('Submitting profile data:', {
+        user_id: userId,
+        full_name: fullName,
+        faculty,
+        major,
+        courses,
+        bio,
+        skills,
+        interests,
+      });
+
       const { error } = await supabase
         .from('profiles')
         .upsert({
           user_id: userId,
           full_name: fullName,
+          faculty,
+          major,
+          courses,
           bio,
           skills,
           interests,
           updated_at: new Date().toISOString(),
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
       
       router.push('/find-partners');
     } catch (error: unknown) {
+      console.error('Profile setup error:', error);
       if (error instanceof Error) {
         setError(error.message);
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        setError(error.message as string);
       } else {
-        setError('An unexpected error occurred');
+        setError('An unexpected error occurred while saving your profile');
       }
     } finally {
       setLoading(false);
@@ -152,8 +183,8 @@ export default function ProfileSetupPage() {
               <Label htmlFor="courses">Current Courses (comma separated)</Label>
               <Input
                 id="courses"
-                value={courses}
-                onChange={(e) => setCourses(e.target.value)}
+                value={coursesInput}
+                onChange={handleCoursesChange}
                 placeholder="e.g., OBHR 674, MGST 611"
                 required
               />
