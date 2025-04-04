@@ -106,36 +106,43 @@ export default function ProfileSetupPage() {
       if (!faculty.trim()) throw new Error('Faculty is required');
       if (!major.trim()) throw new Error('Major is required');
 
+      // Ensure arrays are properly formatted
+      const formattedCourses = courses.filter(Boolean);
+      const formattedSkills = skills.filter(Boolean);
+      const formattedInterests = interests.filter(Boolean);
+
       // Prepare profile data
       const profileData = {
         user_id: session.user.id,
         full_name: fullName.trim(),
         faculty: faculty.trim(),
         major: major.trim(),
-        courses: courses || [], // Ensure courses is an array
-        bio: bio.trim() || null, // Use null for empty bio
-        skills: skills || [], // Ensure skills is an array
-        interests: interests || [], // Ensure interests is an array
-        updated_at: new Date().toISOString()
+        courses: formattedCourses,
+        bio: bio.trim() || null,
+        skills: formattedSkills,
+        interests: formattedInterests
       };
 
-      console.log('Submitting profile data:', profileData);
+      // Debug logs
+      console.log('Session user ID:', session.user.id);
+      console.log('Profile data being sent:', JSON.stringify(profileData, null, 2));
 
-      // First try to select the profile to see if it exists
-      const { data: existingProfile, error: selectError } = await supabase
+      // First check if profile exists
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
-        .select()
+        .select('id')
         .eq('user_id', session.user.id)
         .single();
 
-      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 means no rows returned
-        console.error('Error checking existing profile:', selectError);
-        throw selectError;
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error checking existing profile:', fetchError);
+        throw fetchError;
       }
 
       let result;
       if (existingProfile) {
         // Update existing profile
+        console.log('Updating existing profile...');
         result = await supabase
           .from('profiles')
           .update(profileData)
@@ -144,19 +151,20 @@ export default function ProfileSetupPage() {
           .single();
       } else {
         // Insert new profile
+        console.log('Creating new profile...');
         result = await supabase
           .from('profiles')
-          .insert(profileData)
+          .insert([profileData])
           .select()
           .single();
       }
 
       if (result.error) {
         console.error('Supabase operation error:', result.error);
-        throw result.error;
+        throw new Error(`Failed to save profile: ${result.error.message}`);
       }
 
-      console.log('Profile created/updated successfully:', result.data);
+      console.log('Profile saved successfully:', result.data);
       router.push('/find-partners');
     } catch (error: unknown) {
       console.error('Profile setup error:', error);
@@ -165,7 +173,7 @@ export default function ProfileSetupPage() {
       } else if (typeof error === 'object' && error !== null && 'message' in error) {
         setError(error.message as string);
       } else {
-        setError('An unexpected error occurred while saving your profile. Please check the console for more details.');
+        setError('An unexpected error occurred while saving your profile.');
       }
     } finally {
       setLoading(false);
