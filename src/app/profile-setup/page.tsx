@@ -90,7 +90,13 @@ export default function ProfileSetupPage() {
     
     try {
       const supabase = getSupabase();
-      console.log('Submitting profile data:', {
+      
+      // Log the session state
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Current session:', session);
+      
+      // Log the data being submitted
+      const profileData = {
         user_id: userId,
         full_name: fullName,
         faculty,
@@ -99,26 +105,22 @@ export default function ProfileSetupPage() {
         bio,
         skills,
         interests,
-      });
+        updated_at: new Date().toISOString(),
+      };
+      console.log('Submitting profile data:', profileData);
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: userId,
-          full_name: fullName,
-          faculty,
-          major,
-          courses,
-          bio,
-          skills,
-          interests,
-          updated_at: new Date().toISOString(),
-        });
+        .upsert(profileData)
+        .select()
+        .single();
 
       if (error) {
         console.error('Supabase error:', error);
         throw error;
       }
+
+      console.log('Profile created/updated successfully:', data);
       
       router.push('/find-partners');
     } catch (error: unknown) {
@@ -128,7 +130,7 @@ export default function ProfileSetupPage() {
       } else if (typeof error === 'object' && error !== null && 'message' in error) {
         setError(error.message as string);
       } else {
-        setError('An unexpected error occurred while saving your profile');
+        setError('An unexpected error occurred while saving your profile. Please check the console for more details.');
       }
     } finally {
       setLoading(false);
