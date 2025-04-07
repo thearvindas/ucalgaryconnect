@@ -424,23 +424,26 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {leaderboard.map((user, index) => (
-                <div key={user.user_id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <span className="text-sm font-medium text-primary">
-                        {index + 1}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{user.full_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {user.connection_count} {user.connection_count === 1 ? 'connection' : 'connections'}
-                      </p>
+              {leaderboard.map((user, index) => {
+                const connectionText = user.connection_count === 1 ? 'connection' : 'connections';
+                return (
+                  <div key={user.user_id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                        <span className="text-sm font-medium text-primary">
+                          {index + 1}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{user.full_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {user.connection_count} {connectionText}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

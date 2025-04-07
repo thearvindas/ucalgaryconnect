@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSupabase } from '@/lib/supabase';
@@ -21,9 +21,6 @@ import {
   XCircle,
   Clock
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { Loader2 } from 'lucide-react';
 
 interface Connection {
   id: string;
@@ -220,7 +217,11 @@ function ClientConnectionsPage() {
         <p className="text-gray-600">Manage your network and connection requests</p>
       </div>
 
-      <Tabs defaultValue={activeTab} className="w-full" onValueChange={(value) => setActiveTab(value as any)}>
+      <Tabs defaultValue={activeTab} className="w-full" onValueChange={(value) => {
+        if (value === 'received' || value === 'sent' || value === 'active') {
+          setActiveTab(value);
+        }
+      }}>
         <TabsList className="grid w-full grid-cols-3 mb-8">
           <TabsTrigger value="received" className="flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
@@ -477,8 +478,8 @@ function ClientConnectionsPage() {
 
 export default function ConnectionsPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto p-6">Loading...</div>}>
+    <div className="container mx-auto p-6">
       <ClientConnectionsPage />
-    </Suspense>
+    </div>
   );
 } 

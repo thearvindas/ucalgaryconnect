@@ -19,8 +19,12 @@ interface StudyGroup {
 
 export default function StudyGroups() {
   const [groups, setGroups] = useState<StudyGroup[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [selectedFaculty, setSelectedFaculty] = useState('');
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+  const [loading] = useState(false);
 
   const SAMPLE_GROUPS = [
     {
@@ -63,9 +67,9 @@ export default function StudyGroups() {
   }, [SAMPLE_GROUPS]);
 
   const filteredGroups = groups.filter(group =>
-    group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchQuery.toLowerCase())
+    group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    group.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    group.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) return <div className="container mx-auto px-4 py-8">Loading study groups...</div>;
@@ -86,8 +90,8 @@ export default function StudyGroups() {
         <Input
           type="text"
           placeholder="Search study groups..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-md"
         />
       </div>
