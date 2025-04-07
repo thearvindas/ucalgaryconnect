@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ interface Connection {
   };
 }
 
-export default function ConnectionsPage() {
+function ClientConnectionsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [connections, setConnections] = useState<Connection[]>([]);
@@ -217,11 +217,11 @@ export default function ConnectionsPage() {
   };
 
   if (loading) {
-    return <div className="container mx-auto px-4 py-8">Loading connections...</div>;
+    return <div>Loading connections...</div>;
   }
 
   if (error) {
-    return <div className="container mx-auto px-4 py-8 text-red-500">{error}</div>;
+    return <div className="text-red-500">{error}</div>;
   }
 
   // Filter connections based on status and user role
@@ -238,7 +238,6 @@ export default function ConnectionsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-purple-600 mb-8">My Connections</h1>
-      
       <Tabs defaultValue={activeTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="received">Pending Requests ({receivedRequests.length})</TabsTrigger>
@@ -423,5 +422,13 @@ export default function ConnectionsPage() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ConnectionsPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8">Loading connections...</div>}>
+      <ClientConnectionsPage />
+    </Suspense>
   );
 } 
