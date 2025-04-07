@@ -425,7 +425,11 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {leaderboard.map((user, index) => {
-                const connectionText = user.connection_count === 1 ? 'connection' : 'connections';
+                const ConnectionText = () => (
+                  <span>
+                    {user.connection_count} {user.connection_count === 1 ? 'connection' : 'connections'}
+                  </span>
+                );
                 return (
                   <div key={user.user_id} className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -437,7 +441,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="font-medium">{user.full_name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {user.connection_count} {connectionText}
+                          <ConnectionText />
                         </p>
                       </div>
                     </div>
