@@ -130,7 +130,21 @@ export default function DashboardPage() {
           .eq('user_id', session.user.id)
           .single();
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          if (profileError.code === 'PGRST116') {
+            // Profile doesn't exist, redirect to profile setup
+            router.push('/profile-setup');
+            return;
+          }
+          throw profileError;
+        }
+
+        // Check if profile is complete
+        if (!profileData?.full_name || !profileData?.faculty || !profileData?.major || !profileData?.courses?.length) {
+          router.push('/profile-setup');
+          return;
+        }
+
         setProfile(profileData);
 
         await Promise.all([

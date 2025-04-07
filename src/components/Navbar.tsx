@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { getSupabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [hasCompleteProfile, setHasCompleteProfile] = useState<boolean>(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -18,6 +20,21 @@ export default function Navbar() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setUser(session.user);
+          
+          // Check if user has a complete profile
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, faculty, major, courses')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (!profileError && profileData) {
+            const isProfileComplete = profileData.full_name && 
+                                    profileData.faculty && 
+                                    profileData.major && 
+                                    profileData.courses?.length > 0;
+            setHasCompleteProfile(isProfileComplete);
+          }
         }
       } catch (error) {
         console.error('Error checking session:', error);
@@ -32,6 +49,7 @@ export default function Navbar() {
         setUser(session.user);
       } else {
         setUser(null);
+        setHasCompleteProfile(false);
       }
     });
 
@@ -51,6 +69,9 @@ export default function Navbar() {
     }
   };
 
+  // If user is on profile-setup page and doesn't have a complete profile, only show minimal navigation
+  const isInitialProfileSetup = pathname === '/profile-setup' && !hasCompleteProfile;
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
       <div className="container mx-auto px-4">
@@ -59,7 +80,7 @@ export default function Navbar() {
             <Link href="/" className="text-xl font-bold text-purple-600">
               UCalgaryConnect
             </Link>
-            {user && (
+            {user && !isInitialProfileSetup && (
               <>
                 <Link href="/dashboard" className="text-gray-600 hover:text-purple-600">
                   Dashboard

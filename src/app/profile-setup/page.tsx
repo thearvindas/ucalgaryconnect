@@ -187,7 +187,7 @@ export default function ProfileSetupPage() {
       }
 
       console.log('Profile saved successfully:', result.data);
-      router.push('/find-partners');
+      router.push('/dashboard');
     } catch (error: unknown) {
       console.error('Profile setup error:', error);
       if (error instanceof Error) {
