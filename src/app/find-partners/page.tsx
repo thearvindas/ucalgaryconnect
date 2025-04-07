@@ -22,9 +22,17 @@ interface Profile {
   courses: string[];
 }
 
+interface Connection {
+  id: string;
+  user_id: string;
+  connected_user_id: string;
+  status: 'pending' | 'accepted' | 'declined';
+}
+
 export default function FindPartners() {
   const router = useRouter();
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -38,25 +46,32 @@ export default function FindPartners() {
         }
 
         const supabase = getSupabase();
-        const { data: connectionsData } = await supabase
+        
+        // Fetch all connections
+        const { data: connectionsData, error: connectionsError } = await supabase
           .from('connections')
-          .select('connected_user_id')
-          .eq('user_id', session.user.id);
+          .select('*')
+          .or(`user_id.eq.${session.user.id},connected_user_id.eq.${session.user.id}`);
 
-        const connectedUserIds = new Set(connectionsData?.map(conn => conn.connected_user_id) || []);
+        if (connectionsError) {
+          console.error('Error fetching connections:', connectionsError);
+          return;
+        }
 
-        const { data: profiles, error } = await supabase
+        setConnections(connectionsData || []);
+
+        // Fetch all profiles except current user
+        const { data: profiles, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
           .neq('user_id', session.user.id);
 
-        if (error) {
-          console.error('Error fetching partners:', error);
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
           return;
         }
 
-        const availablePartners = profiles?.filter(profile => !connectedUserIds.has(profile.id)) || [];
-        setProfiles(availablePartners);
+        setProfiles(profiles || []);
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -73,6 +88,13 @@ export default function FindPartners() {
     return searchableText.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
+  const getConnectionStatus = (profileId: string) => {
+    const connection = connections.find(conn => 
+      (conn.user_id === profileId || conn.connected_user_id === profileId)
+    );
+    return connection?.status || null;
+  };
+
   const handleConnect = async (partnerId: string) => {
     try {
       const supabase = getSupabase();
@@ -83,34 +105,21 @@ export default function FindPartners() {
         return;
       }
 
-      // Check if a connection already exists
-      const { data: existingConnection, error: checkError } = await supabase
-        .from('connections')
-        .select('*')
-        .or(`and(user_id.eq.${session.user.id},connected_user_id.eq.${partnerId}),and(user_id.eq.${partnerId},connected_user_id.eq.${session.user.id})`)
-        .single();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
-
-      if (existingConnection) {
-        alert('You already have a connection with this user.');
-        return;
-      }
-
       // Create new connection request
-      const { error: createError } = await supabase
+      const { data: newConnection, error: createError } = await supabase
         .from('connections')
         .insert({
           user_id: session.user.id,
           connected_user_id: partnerId,
           status: 'pending'
-        });
+        })
+        .select()
+        .single();
 
       if (createError) throw createError;
 
-      alert('Connection request sent!');
+      // Update local state
+      setConnections(prev => [...prev, newConnection]);
     } catch (error) {
       console.error('Error connecting with partner:', error);
       alert('Failed to send connection request. Please try again.');
@@ -127,60 +136,91 @@ export default function FindPartners() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
+      <h1 className="text-3xl font-bold text-purple-600 mb-8">Find Study Partners</h1>
+      
+      <div className="mb-6">
         <Input
-          placeholder="Search by name, skills, bio..."
+          type="text"
+          placeholder="Search by name, skills, or interests..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-md mx-auto"
+          className="max-w-md"
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProfiles.map(profile => (
-          <Card key={profile.id} className="h-full flex flex-col">
-            <CardHeader>
-              <CardTitle className="text-xl text-purple-600">{profile.full_name}</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              {profile.skills && profile.skills.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="font-medium mb-2">Skills:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {profile.skills.map(skill => (
-                      <Badge key={skill} variant="outline">{skill}</Badge>
-                    ))}
+        {filteredProfiles.map(profile => {
+          const connectionStatus = getConnectionStatus(profile.user_id);
+          
+          return (
+            <Card key={profile.id} className="h-full flex flex-col">
+              <CardHeader>
+                <CardTitle>{profile.full_name}</CardTitle>
+                <div className="text-sm text-gray-500">
+                  {profile.faculty} - {profile.major}
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                <div className="space-y-4">
+                  {profile.bio && (
+                    <p className="text-gray-600">{profile.bio}</p>
+                  )}
+                  
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.skills.map(skill => (
+                        <Badge key={skill} variant="secondary">
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Interests</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.interests.map(interest => (
+                        <Badge key={interest} variant="outline">
+                          {interest}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Courses</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.courses.map(course => (
+                        <Badge key={course} variant="outline">
+                          {course}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              )}
-
-              {profile.interests && profile.interests.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="font-medium mb-2">Interests:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {profile.interests.map(interest => (
-                      <Badge key={interest} variant="secondary">{interest}</Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {profile.bio && (
-                <div>
-                  <h4 className="font-medium mb-2">Bio:</h4>
-                  <p className="text-gray-600">{profile.bio}</p>
-                </div>
-              )}
-
-              <Button
-                className="w-full bg-purple-600 hover:bg-purple-700"
-                onClick={() => handleConnect(profile.user_id)}
-              >
-                Connect
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+              <CardContent>
+                {connectionStatus === 'accepted' ? (
+                  <Button className="w-full bg-green-600 hover:bg-green-700" disabled>
+                    Connected
+                  </Button>
+                ) : connectionStatus === 'pending' ? (
+                  <Button className="w-full bg-yellow-600 hover:bg-yellow-700" disabled>
+                    Connection Pending
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    onClick={() => handleConnect(profile.user_id)}
+                  >
+                    Connect
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
