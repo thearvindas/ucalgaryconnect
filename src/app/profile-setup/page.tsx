@@ -32,6 +32,7 @@ export default function ProfileSetupPage() {
   const [loading, setLoading] = useState(false);
   const [availableSkills, setAvailableSkills] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -65,6 +66,7 @@ export default function ProfileSetupPage() {
           setBio(profileData.bio || '');
           setSkills(profileData.skills || []);
           setInterests(profileData.interests || []);
+          setIsEditMode(true);
         }
       } catch (error) {
         console.error('Error checking session:', error);
@@ -206,9 +208,14 @@ export default function ProfileSetupPage() {
     <div className="container mx-auto px-4 py-8">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl text-center text-purple-600">Complete Your Profile</CardTitle>
+          <CardTitle className="text-2xl text-center text-purple-600">
+            {isEditMode ? 'Edit Your Profile' : 'Complete Your Profile'}
+          </CardTitle>
           <CardDescription className="text-center">
-            Help us match you with the right partners by providing some information about yourself
+            {isEditMode 
+              ? 'Update your profile information to keep your matches relevant'
+              : 'Help us match you with the right partners by providing some information about yourself'
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>

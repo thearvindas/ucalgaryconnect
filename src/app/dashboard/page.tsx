@@ -126,43 +126,77 @@ export default function DashboardPage() {
     try {
       const supabase = getSupabase();
       
-      // First get all accepted connections
+      // Get all accepted connections with a more explicit query
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('connections')
-        .select('user_id, connected_user_id')
+        .select(`
+          id,
+          user_id,
+          connected_user_id,
+          status,
+          created_at
+        `)
         .eq('status', 'accepted');
 
-      if (connectionsError) throw connectionsError;
+      if (connectionsError) {
+        console.error('Error fetching connections:', connectionsError);
+        throw connectionsError;
+      }
 
-      // Count connections for each user
+      // Log the raw SQL query for debugging
+      console.log('Raw accepted connections:', connectionsData);
+      console.log('Number of accepted connections:', connectionsData?.length || 0);
+
+      // Count active connections for each user
       const connectionCounts = new Map<string, number>();
       connectionsData?.forEach(conn => {
+        // Each connection counts as 1 for both users involved
         connectionCounts.set(conn.user_id, (connectionCounts.get(conn.user_id) || 0) + 1);
         connectionCounts.set(conn.connected_user_id, (connectionCounts.get(conn.connected_user_id) || 0) + 1);
       });
 
-      // Get user profiles for users with connections
-      const userIds = Array.from(connectionCounts.keys());
-      if (userIds.length > 0) {
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('user_id, full_name')
-          .in('user_id', userIds);
+      // Log all connection counts
+      console.log('Connection counts by user:', Object.fromEntries(connectionCounts));
 
-        if (profilesError) throw profilesError;
+      // Get all profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name');
 
-        // Combine connection counts with user names and sort
-        const leaderboardData = profilesData
-          ?.map(profile => ({
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        throw profilesError;
+      }
+
+      // Log all profiles
+      console.log('All profiles:', profilesData);
+
+      // Combine connection counts with user names and sort by connection count
+      const leaderboardData = profilesData
+        ?.map(profile => {
+          const count = connectionCounts.get(profile.user_id) || 0;
+          console.log(`User ${profile.full_name} (${profile.user_id}) has ${count} connections`);
+          return {
             user_id: profile.user_id,
             full_name: profile.full_name,
-            connection_count: connectionCounts.get(profile.user_id) || 0
-          }))
-          .sort((a, b) => b.connection_count - a.connection_count)
-          .slice(0, 3);
+            connection_count: count
+          };
+        })
+        .sort((a, b) => b.connection_count - a.connection_count)
+        .slice(0, 3); // Get top 3 users
 
-        setLeaderboard(leaderboardData || []);
-      }
+      console.log('Final leaderboard data:', leaderboardData);
+
+      setLeaderboard(leaderboardData || []);
+
+      // Double check the database directly
+      const { data: checkData, error: checkError } = await supabase
+        .from('connections')
+        .select('status')
+        .eq('status', 'accepted');
+      
+      console.log('Double check accepted connections:', checkData);
+      
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     }
