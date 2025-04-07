@@ -270,6 +270,12 @@ export default function DashboardPage() {
     initializeDashboard();
   }, [fetchConnections, fetchEvents, fetchLeaderboard, router]);
 
+  const ConnectionCount = ({ count }: { count: number }) => (
+    <span>
+      {count} {count === 1 ? 'connection' : 'connections'}
+    </span>
+  );
+
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading dashboard...</div>;
   }
@@ -424,30 +430,23 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {leaderboard.map((user, index) => {
-                const ConnectionText = () => (
-                  <span>
-                    {user.connection_count} {user.connection_count === 1 ? 'connection' : 'connections'}
-                  </span>
-                );
-                return (
-                  <div key={user.user_id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                        <span className="text-sm font-medium text-primary">
-                          {index + 1}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.full_name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          <ConnectionText />
-                        </p>
-                      </div>
+              {leaderboard.map((user, index) => (
+                <div key={user.user_id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <span className="text-sm font-medium text-primary">
+                        {index + 1}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{user.full_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        <ConnectionCount count={user.connection_count} />
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>
