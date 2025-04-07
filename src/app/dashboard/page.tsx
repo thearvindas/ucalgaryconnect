@@ -270,11 +270,14 @@ export default function DashboardPage() {
     initializeDashboard();
   }, [fetchConnections, fetchEvents, fetchLeaderboard, router]);
 
-  const ConnectionCount = ({ count }: { count: number }) => (
-    <span>
-      {count} {count === 1 ? 'connection' : 'connections'}
-    </span>
-  );
+  const ConnectionCount = ({ count }: { count: number }) => {
+    const text = count === 1 ? 'connection' : 'connections';
+    return (
+      <span>
+        {count} {text}
+      </span>
+    );
+  };
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading dashboard...</div>;
@@ -290,10 +293,10 @@ export default function DashboardPage() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-4xl font-bold text-gray-900">
-            Welcome back, {profile?.full_name?.split(' ')[0] || 'User'}! 👋
+            Welcome back, {profile?.full_name?.split(' ')[0] || "User"}! 👋
           </h1>
           <p className="text-gray-600 mt-2">
-            Here's what's happening in your network
+            Here{"'"}s what{"'"}s happening in your network
           </p>
         </div>
         <Link href="/profile-setup">
