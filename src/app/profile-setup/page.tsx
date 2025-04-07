@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSupabase } from '@/lib/supabase';
+import Navbar from '@/components/Navbar';
 
 const INTERESTS = [
   { id: 'hackathons', label: 'Hackathons' },
@@ -213,135 +214,138 @@ export default function ProfileSetupPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center text-gray-900">
-            {isEditMode ? 'Edit Your Profile' : 'Complete Your Profile'}
-          </CardTitle>
-          <CardDescription className="text-center">
-            {isEditMode 
-              ? 'Update your profile information to keep your matches relevant'
-              : 'Help us match you with the right partners by providing some information about yourself'
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="e.g., John Doe"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="faculty">Faculty</Label>
-              <Input
-                id="faculty"
-                value={faculty}
-                onChange={(e) => setFaculty(e.target.value)}
-                placeholder="e.g., Haskayne School of Business"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="major">Major</Label>
-              <Input
-                id="major"
-                value={major}
-                onChange={(e) => setMajor(e.target.value)}
-                placeholder="e.g., Business Analytics"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="courses">Current Courses (comma separated)</Label>
-              <Input
-                id="courses"
-                value={coursesInput}
-                onChange={handleCoursesChange}
-                placeholder="e.g., ENTI 674, MGST 611"
-                required
-              />
-              <p className="text-sm text-gray-500">Format: DEPT 123 (e.g., ENTI 674)</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Skills</Label>
-              <div className="flex flex-wrap gap-2">
-                {availableSkills.map(skill => (
-                  <div key={skill} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={skill}
-                      checked={skills.includes(skill)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setSkills([...skills, skill]);
-                        } else {
-                          setSkills(skills.filter(s => s !== skill));
-                        }
-                      }}
-                    />
-                    <Label htmlFor={skill}>{skill}</Label>
-                  </div>
-                ))}
+    <>
+      {isEditMode && <Navbar />}
+      <div className="container mx-auto px-4 py-8">
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl text-center text-gray-900">
+              {isEditMode ? 'Edit Your Profile' : 'Complete Your Profile'}
+            </CardTitle>
+            <CardDescription className="text-center">
+              {isEditMode 
+                ? 'Update your profile information to keep your matches relevant'
+                : 'Help us match you with the right partners by providing some information about yourself'
+              }
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="e.g., John Doe"
+                  required
+                />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label>Interests</Label>
-              <div className="grid grid-cols-2 gap-4">
-                {INTERESTS.map(interest => (
-                  <div key={interest.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={interest.id}
-                      checked={interests.includes(interest.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          setInterests([...interests, interest.id]);
-                        } else {
-                          setInterests(interests.filter(i => i !== interest.id));
-                        }
-                      }}
-                    />
-                    <Label htmlFor={interest.id}>{interest.label}</Label>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <Label htmlFor="faculty">Faculty</Label>
+                <Input
+                  id="faculty"
+                  value={faculty}
+                  onChange={(e) => setFaculty(e.target.value)}
+                  placeholder="e.g., Haskayne School of Business"
+                  required
+                />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="bio">About You</Label>
-              <Textarea
-                id="bio"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about yourself, your goals, and what you&apos;re looking for in a partner..."
-                className="min-h-32"
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="major">Major</Label>
+                <Input
+                  id="major"
+                  value={major}
+                  onChange={(e) => setMajor(e.target.value)}
+                  placeholder="e.g., Business Analytics"
+                  required
+                />
+              </div>
 
-            {error && (
-              <div className="text-red-500 text-sm text-center">{error}</div>
-            )}
+              <div className="space-y-2">
+                <Label htmlFor="courses">Current Courses (comma separated)</Label>
+                <Input
+                  id="courses"
+                  value={coursesInput}
+                  onChange={handleCoursesChange}
+                  placeholder="e.g., ENTI 674, MGST 611"
+                  required
+                />
+                <p className="text-sm text-gray-500">Format: DEPT 123 (e.g., ENTI 674)</p>
+              </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700"
-              disabled={loading}
-            >
-              {loading ? 'Saving...' : 'Save Profile'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+              <div className="space-y-2">
+                <Label>Skills</Label>
+                <div className="flex flex-wrap gap-2">
+                  {availableSkills.map(skill => (
+                    <div key={skill} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={skill}
+                        checked={skills.includes(skill)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSkills([...skills, skill]);
+                          } else {
+                            setSkills(skills.filter(s => s !== skill));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={skill}>{skill}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Interests</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  {INTERESTS.map(interest => (
+                    <div key={interest.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={interest.id}
+                        checked={interests.includes(interest.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setInterests([...interests, interest.id]);
+                          } else {
+                            setInterests(interests.filter(i => i !== interest.id));
+                          }
+                        }}
+                      />
+                      <Label htmlFor={interest.id}>{interest.label}</Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bio">About You</Label>
+                <Textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  placeholder="Tell us about yourself, your goals, and what you&apos;re looking for in a partner..."
+                  className="min-h-32"
+                />
+              </div>
+
+              {error && (
+                <div className="text-red-500 text-sm text-center">{error}</div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full bg-purple-600 hover:bg-purple-700"
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Profile'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 } 
