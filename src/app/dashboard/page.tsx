@@ -190,7 +190,7 @@ export default function DashboardPage() {
       setLeaderboard(leaderboardData || []);
 
       // Double check the database directly
-      const { data: checkData, error: checkError } = await supabase
+      const { data: checkData } = await supabase
         .from('connections')
         .select('status')
         .eq('status', 'accepted');
