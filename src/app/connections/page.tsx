@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,14 +39,14 @@ interface Connection {
   };
 }
 
-function ClientConnectionsPage() {
+function ConnectionsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'received' | 'sent' | 'active'>('received');
+  const [activeTab, setActiveTab] = useState(searchParams?.get('tab') || 'received');
 
   useEffect(() => {
     const tab = searchParams?.get('tab');
@@ -478,8 +478,8 @@ function ClientConnectionsPage() {
 
 export default function ConnectionsPage() {
   return (
-    <div className="container mx-auto p-6">
-      <ClientConnectionsPage />
-    </div>
+    <Suspense fallback={<div className="container mx-auto p-6">Loading connections...</div>}>
+      <ConnectionsContent />
+    </Suspense>
   );
 } 
