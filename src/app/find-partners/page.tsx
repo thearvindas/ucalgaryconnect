@@ -163,7 +163,7 @@ export default function FindPartners() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-purple-600 mb-8">Find Study Partners</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">Find Study Partners</h1>
       
       <div className="mb-6 space-y-4">
         <div className="flex gap-4">
@@ -250,10 +250,10 @@ export default function FindPartners() {
                   </Button>
                 ) : connectionStatus === 'pending' ? (
                   <Button className="w-full bg-yellow-600 hover:bg-yellow-700" disabled>
-                    Connection Pending
+                    Request Sent
                   </Button>
                 ) : (
-                  <Button
+                  <Button 
                     className="w-full bg-purple-600 hover:bg-purple-700"
                     onClick={() => handleConnect(profile.user_id)}
                   >

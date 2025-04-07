@@ -2,11 +2,25 @@
 
 import { useEffect, useState, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSupabase } from '@/lib/supabase';
 import { Badge } from "@/components/ui/badge";
+import { motion } from 'framer-motion';
+import { 
+  Users,
+  UserPlus,
+  UserMinus,
+  Mail,
+  School,
+  BookOpen,
+  Briefcase,
+  Heart,
+  CheckCircle,
+  XCircle,
+  Clock
+} from 'lucide-react';
 
 interface Connection {
   id: string;
@@ -217,206 +231,291 @@ function ClientConnectionsPage() {
   };
 
   if (loading) {
-    return <div>Loading connections...</div>;
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-lg text-gray-500">Loading connections...</div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-lg text-red-500">{error}</div>
+        </div>
+      </div>
+    );
   }
 
-  // Filter connections based on status and user role
-  const receivedRequests = connections.filter(conn => 
-    conn.connected_user_id === currentUserId && conn.status === 'pending'
+  const receivedRequests = connections.filter(
+    conn => conn.connected_user_id === currentUserId && conn.status === 'pending'
   );
-  const sentRequests = connections.filter(conn => 
-    conn.user_id === currentUserId && conn.status === 'pending'
+
+  const sentRequests = connections.filter(
+    conn => conn.user_id === currentUserId && conn.status === 'pending'
   );
-  const activeConnections = connections.filter(conn => 
-    conn.status === 'accepted'
+
+  const activeConnections = connections.filter(
+    conn => conn.status === 'accepted'
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-purple-600 mb-8">My Connections</h1>
-      <Tabs defaultValue={activeTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="received">Pending Requests ({receivedRequests.length})</TabsTrigger>
-          <TabsTrigger value="sent">Sent Requests ({sentRequests.length})</TabsTrigger>
-          <TabsTrigger value="active">Active Connections ({activeConnections.length})</TabsTrigger>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex flex-col space-y-2">
+        <h1 className="text-4xl font-bold text-gray-900">Connections</h1>
+        <p className="text-gray-600">Manage your network and connection requests</p>
+      </div>
+
+      <Tabs defaultValue={activeTab} className="w-full" onValueChange={(value) => setActiveTab(value as any)}>
+        <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsTrigger value="received" className="flex items-center gap-2">
+            <UserPlus className="h-4 w-4" />
+            Received
+            {receivedRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{receivedRequests.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="sent" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Sent
+            {sentRequests.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{sentRequests.length}</Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="active" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Active
+            {activeConnections.length > 0 && (
+              <Badge variant="secondary" className="ml-2">{activeConnections.length}</Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="received">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {receivedRequests.map(connection => (
-              <Card key={connection.id}>
-                <CardHeader>
-                  <CardTitle>{connection.profile?.full_name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-gray-500">{connection.profile?.faculty} - {connection.profile?.major}</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Skills</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {connection.profile?.skills.map(skill => (
-                          <span key={skill} className="px-2 py-1 bg-gray-100 rounded-full text-sm">
-                            {skill}
-                          </span>
-                        ))}
+          <div className="grid gap-4">
+            {receivedRequests.length > 0 ? (
+              receivedRequests.map((connection) => (
+                <motion.div
+                  key={connection.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <h3 className="text-xl font-semibold">{connection.profile.full_name}</h3>
+                            <div className="flex items-center gap-2 text-gray-500">
+                              <School className="h-4 w-4" />
+                              <span>{connection.profile.faculty}</span>
+                              <span>•</span>
+                              <span>{connection.profile.major}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-4 w-4 text-blue-600" />
+                              <div className="flex flex-wrap gap-2">
+                                {connection.profile.courses.map((course) => (
+                                  <Badge key={course} variant="secondary">{course}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Briefcase className="h-4 w-4 text-green-600" />
+                              <div className="flex flex-wrap gap-2">
+                                {connection.profile.skills.map((skill) => (
+                                  <Badge key={skill} variant="outline">{skill}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Heart className="h-4 w-4 text-red-600" />
+                              <div className="flex flex-wrap gap-2">
+                                {connection.profile.interests.map((interest) => (
+                                  <Badge key={interest} variant="outline">{interest}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            onClick={() => handleAccept(connection.id)}
+                            className="flex items-center gap-2"
+                            variant="default"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            Accept
+                          </Button>
+                          <Button
+                            onClick={() => handleDecline(connection.id)}
+                            className="flex items-center gap-2"
+                            variant="outline"
+                          >
+                            <XCircle className="h-4 w-4" />
+                            Decline
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Interests</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {connection.profile?.interests.map(interest => (
-                          <span key={interest} className="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-sm">
-                            {interest}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button 
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        onClick={() => handleAccept(connection.id)}
-                      >
-                        Accept
-                      </Button>
-                      <Button 
-                        className="flex-1 bg-red-600 hover:bg-red-700"
-                        onClick={() => handleDecline(connection.id)}
-                      >
-                        Decline
-                      </Button>
-                    </div>
-                  </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No pending connection requests</p>
                 </CardContent>
               </Card>
-            ))}
-            {receivedRequests.length === 0 && (
-              <p className="text-gray-500">No pending requests</p>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="sent">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sentRequests.map(connection => (
-              <Card key={connection.id}>
-                <CardHeader>
-                  <CardTitle>{connection.profile?.full_name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-gray-500">{connection.profile?.faculty} - {connection.profile?.major}</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Skills</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {connection.profile?.skills.map(skill => (
-                          <span key={skill} className="px-2 py-1 bg-gray-100 rounded-full text-sm">
-                            {skill}
-                          </span>
-                        ))}
+          <div className="grid gap-4">
+            {sentRequests.length > 0 ? (
+              sentRequests.map((connection) => (
+                <motion.div
+                  key={connection.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <h3 className="text-xl font-semibold">{connection.profile.full_name}</h3>
+                            <div className="flex items-center gap-2 text-gray-500">
+                              <School className="h-4 w-4" />
+                              <span>{connection.profile.faculty}</span>
+                              <span>•</span>
+                              <span>{connection.profile.major}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-4 w-4 text-blue-600" />
+                              <div className="flex flex-wrap gap-2">
+                                {connection.profile.courses.map((course) => (
+                                  <Badge key={course} variant="secondary">{course}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          onClick={() => handleCancel(connection.id)}
+                          className="flex items-center gap-2"
+                          variant="outline"
+                        >
+                          <UserMinus className="h-4 w-4" />
+                          Cancel Request
+                        </Button>
                       </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Interests</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {connection.profile?.interests.map(interest => (
-                          <span key={interest} className="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-sm">
-                            {interest}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Button 
-                      className="w-full bg-red-600 hover:bg-red-700"
-                      onClick={() => handleCancel(connection.id)}
-                    >
-                      Cancel Request
-                    </Button>
-                  </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-gray-500">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No pending sent requests</p>
                 </CardContent>
               </Card>
-            ))}
-            {sentRequests.length === 0 && (
-              <p className="text-gray-500">No sent connection requests</p>
             )}
           </div>
         </TabsContent>
 
         <TabsContent value="active">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {activeConnections.map(connection => (
-              <Card key={connection.id} className="h-full flex flex-col">
-                <CardHeader>
-                  <CardTitle>{connection.profile?.full_name}</CardTitle>
-                  <div className="text-sm text-gray-500">
-                    {connection.profile?.faculty} - {connection.profile?.major}
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Skills</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {connection.profile?.skills.map(skill => (
-                          <Badge key={skill} variant="secondary">
-                            {skill}
-                          </Badge>
-                        ))}
+          <div className="grid gap-4">
+            {activeConnections.length > 0 ? (
+              activeConnections.map((connection) => (
+                <motion.div
+                  key={connection.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="hover:shadow-lg transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-3">
+                          <div className="space-y-1">
+                            <h3 className="text-xl font-semibold">{connection.profile.full_name}</h3>
+                            <div className="flex items-center gap-2 text-gray-500">
+                              <School className="h-4 w-4" />
+                              <span>{connection.profile.faculty}</span>
+                              <span>•</span>
+                              <span>{connection.profile.major}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <BookOpen className="h-4 w-4 text-blue-600" />
+                              <div className="flex flex-wrap gap-2">
+                                {connection.profile.courses.map((course) => (
+                                  <Badge key={course} variant="secondary">{course}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Briefcase className="h-4 w-4 text-green-600" />
+                              <div className="flex flex-wrap gap-2">
+                                {connection.profile.skills.map((skill) => (
+                                  <Badge key={skill} variant="outline">{skill}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Heart className="h-4 w-4 text-red-600" />
+                              <div className="flex flex-wrap gap-2">
+                                {connection.profile.interests.map((interest) => (
+                                  <Badge key={interest} variant="outline">{interest}</Badge>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <Button
+                          onClick={() => window.location.href = `mailto:${connection.profile.email}`}
+                          className="flex items-center gap-2"
+                          variant="outline"
+                        >
+                          <Mail className="h-4 w-4" />
+                          Send Email
+                        </Button>
                       </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Interests</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {connection.profile?.interests.map(interest => (
-                          <Badge key={interest} variant="outline">
-                            {interest}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h4 className="text-sm font-medium mb-2">Courses</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {connection.profile?.courses.map(course => (
-                          <Badge key={course} variant="outline">
-                            {course}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Button
-                      className="w-full bg-purple-600 hover:bg-purple-700 mt-4"
-                      onClick={() => {
-                        const email = connection.profile?.email;
-                        if (email) {
-                          window.location.href = `mailto:${email}?subject=UCalgaryConnect: Let's connect!`;
-                        }
-                      }}
-                    >
-                      Email Partner
-                    </Button>
-                  </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-gray-500">
+                  <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No active connections yet</p>
                 </CardContent>
               </Card>
-            ))}
-            {activeConnections.length === 0 && (
-              <p className="text-gray-500">No active connections yet</p>
             )}
           </div>
         </TabsContent>
@@ -427,7 +526,7 @@ function ClientConnectionsPage() {
 
 export default function ConnectionsPage() {
   return (
-    <Suspense fallback={<div className="container mx-auto px-4 py-8">Loading connections...</div>}>
+    <Suspense fallback={<div className="container mx-auto p-6">Loading...</div>}>
       <ClientConnectionsPage />
     </Suspense>
   );

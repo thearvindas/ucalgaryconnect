@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSupabase } from '@/lib/supabase';
+import { motion } from "framer-motion";
+import { User, GraduationCap, BookOpen, Code, Heart, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const INTERESTS = [
   { id: 'hackathons', label: 'Hackathons' },
@@ -204,11 +207,19 @@ export default function ProfileSetupPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <p className="text-center text-gray-600">Loading profile...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-2xl text-center text-purple-600">
+          <CardTitle className="text-2xl text-center text-gray-900">
             {isEditMode ? 'Edit Your Profile' : 'Complete Your Profile'}
           </CardTitle>
           <CardDescription className="text-center">
@@ -315,7 +326,7 @@ export default function ProfileSetupPage() {
                 id="bio"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell us about yourself, your goals, and what you're looking for in a partner..."
+                placeholder="Tell us about yourself, your goals, and what you&apos;re looking for in a partner..."
                 className="min-h-32"
               />
             </div>

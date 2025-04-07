@@ -9,7 +9,6 @@ import Link from 'next/link';
 import { 
   Calendar,
   Users,
-  UserPlus,
   Trophy,
   Bell,
   ChevronRight,
