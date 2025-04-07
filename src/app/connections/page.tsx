@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSupabase } from '@/lib/supabase';
+import { Badge } from "@/components/ui/badge";
 
 interface Connection {
   id: string;
@@ -20,15 +21,27 @@ interface Connection {
     skills: string[];
     interests: string[];
     courses: string[];
+    email?: string;
   };
 }
 
 export default function ConnectionsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'received' | 'sent' | 'active'>('received');
+
+  useEffect(() => {
+    const tab = searchParams?.get('tab');
+    if (tab === 'active') {
+      setActiveTab('active');
+    } else if (tab === 'pending') {
+      setActiveTab('received');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const checkSession = async () => {
@@ -71,6 +84,7 @@ export default function ConnectionsPage() {
           conn.user_id === currentUserId ? conn.connected_user_id : conn.user_id
         );
 
+        // Get the profiles
         const { data: profilesData, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
@@ -81,14 +95,22 @@ export default function ConnectionsPage() {
           throw profilesError;
         }
 
+        // Get the current user's data to get their email
+        const { data: { user } } = await supabase.auth.getUser();
+        
         // Combine the data
         const combinedData = connectionsData.map(conn => {
-          const profile = profilesData?.find(p => 
-            p.user_id === (conn.user_id === currentUserId ? conn.connected_user_id : conn.user_id)
-          );
+          const otherUserId = conn.user_id === currentUserId ? conn.connected_user_id : conn.user_id;
+          const profile = profilesData?.find(p => p.user_id === otherUserId);
+          
           return {
             ...conn,
-            profile: profile || null
+            profile: profile ? {
+              ...profile,
+              // For now, we'll use the current user's email as a placeholder
+              // In a real app, you'd want to store/fetch the email addresses securely
+              email: user?.email || 'contact@ucalgaryconnect.ca'
+            } : null
           };
         });
 
@@ -217,9 +239,9 @@ export default function ConnectionsPage() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-purple-600 mb-8">My Connections</h1>
       
-      <Tabs defaultValue="received" className="w-full">
+      <Tabs defaultValue={activeTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="received">Received Requests ({receivedRequests.length})</TabsTrigger>
+          <TabsTrigger value="received">Pending Requests ({receivedRequests.length})</TabsTrigger>
           <TabsTrigger value="sent">Sent Requests ({sentRequests.length})</TabsTrigger>
           <TabsTrigger value="active">Active Connections ({activeConnections.length})</TabsTrigger>
         </TabsList>
@@ -229,18 +251,18 @@ export default function ConnectionsPage() {
             {receivedRequests.map(connection => (
               <Card key={connection.id}>
                 <CardHeader>
-                  <CardTitle>{connection.profile.full_name}</CardTitle>
+                  <CardTitle>{connection.profile?.full_name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-gray-500">{connection.profile.faculty} - {connection.profile.major}</p>
+                      <p className="text-sm text-gray-500">{connection.profile?.faculty} - {connection.profile?.major}</p>
                     </div>
                     
                     <div>
                       <h4 className="text-sm font-medium mb-2">Skills</h4>
                       <div className="flex flex-wrap gap-2">
-                        {connection.profile.skills.map(skill => (
+                        {connection.profile?.skills.map(skill => (
                           <span key={skill} className="px-2 py-1 bg-gray-100 rounded-full text-sm">
                             {skill}
                           </span>
@@ -251,7 +273,7 @@ export default function ConnectionsPage() {
                     <div>
                       <h4 className="text-sm font-medium mb-2">Interests</h4>
                       <div className="flex flex-wrap gap-2">
-                        {connection.profile.interests.map(interest => (
+                        {connection.profile?.interests.map(interest => (
                           <span key={interest} className="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-sm">
                             {interest}
                           </span>
@@ -278,7 +300,7 @@ export default function ConnectionsPage() {
               </Card>
             ))}
             {receivedRequests.length === 0 && (
-              <p className="text-gray-500">No pending connection requests</p>
+              <p className="text-gray-500">No pending requests</p>
             )}
           </div>
         </TabsContent>
@@ -288,18 +310,18 @@ export default function ConnectionsPage() {
             {sentRequests.map(connection => (
               <Card key={connection.id}>
                 <CardHeader>
-                  <CardTitle>{connection.profile.full_name}</CardTitle>
+                  <CardTitle>{connection.profile?.full_name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-gray-500">{connection.profile.faculty} - {connection.profile.major}</p>
+                      <p className="text-sm text-gray-500">{connection.profile?.faculty} - {connection.profile?.major}</p>
                     </div>
                     
                     <div>
                       <h4 className="text-sm font-medium mb-2">Skills</h4>
                       <div className="flex flex-wrap gap-2">
-                        {connection.profile.skills.map(skill => (
+                        {connection.profile?.skills.map(skill => (
                           <span key={skill} className="px-2 py-1 bg-gray-100 rounded-full text-sm">
                             {skill}
                           </span>
@@ -310,7 +332,7 @@ export default function ConnectionsPage() {
                     <div>
                       <h4 className="text-sm font-medium mb-2">Interests</h4>
                       <div className="flex flex-wrap gap-2">
-                        {connection.profile.interests.map(interest => (
+                        {connection.profile?.interests.map(interest => (
                           <span key={interest} className="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-sm">
                             {interest}
                           </span>
@@ -337,23 +359,22 @@ export default function ConnectionsPage() {
         <TabsContent value="active">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {activeConnections.map(connection => (
-              <Card key={connection.id}>
+              <Card key={connection.id} className="h-full flex flex-col">
                 <CardHeader>
-                  <CardTitle>{connection.profile.full_name}</CardTitle>
+                  <CardTitle>{connection.profile?.full_name}</CardTitle>
+                  <div className="text-sm text-gray-500">
+                    {connection.profile?.faculty} - {connection.profile?.major}
+                  </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-gray-500">{connection.profile.faculty} - {connection.profile.major}</p>
-                    </div>
-                    
                     <div>
                       <h4 className="text-sm font-medium mb-2">Skills</h4>
                       <div className="flex flex-wrap gap-2">
-                        {connection.profile.skills.map(skill => (
-                          <span key={skill} className="px-2 py-1 bg-gray-100 rounded-full text-sm">
+                        {connection.profile?.skills.map(skill => (
+                          <Badge key={skill} variant="secondary">
                             {skill}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </div>
@@ -361,13 +382,36 @@ export default function ConnectionsPage() {
                     <div>
                       <h4 className="text-sm font-medium mb-2">Interests</h4>
                       <div className="flex flex-wrap gap-2">
-                        {connection.profile.interests.map(interest => (
-                          <span key={interest} className="px-2 py-1 bg-purple-100 text-purple-600 rounded-full text-sm">
+                        {connection.profile?.interests.map(interest => (
+                          <Badge key={interest} variant="outline">
                             {interest}
-                          </span>
+                          </Badge>
                         ))}
                       </div>
                     </div>
+
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Courses</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {connection.profile?.courses.map(course => (
+                          <Badge key={course} variant="outline">
+                            {course}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button
+                      className="w-full bg-purple-600 hover:bg-purple-700 mt-4"
+                      onClick={() => {
+                        const email = connection.profile?.email;
+                        if (email) {
+                          window.location.href = `mailto:${email}?subject=UCalgaryConnect: Let's connect!`;
+                        }
+                      }}
+                    >
+                      Email Partner
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

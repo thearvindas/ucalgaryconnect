@@ -25,6 +25,12 @@ interface Event {
   location: string;
 }
 
+interface LeaderboardEntry {
+  user_id: string;
+  full_name: string;
+  connection_count: number;
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -36,6 +42,7 @@ export default function DashboardPage() {
     pendingRequests: 0,
     upcomingEvents: 0
   });
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
   const fetchConnections = useCallback(async () => {
     try {
@@ -115,6 +122,52 @@ export default function DashboardPage() {
     }
   }, [router]);
 
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      const supabase = getSupabase();
+      
+      // First get all accepted connections
+      const { data: connectionsData, error: connectionsError } = await supabase
+        .from('connections')
+        .select('user_id, connected_user_id')
+        .eq('status', 'accepted');
+
+      if (connectionsError) throw connectionsError;
+
+      // Count connections for each user
+      const connectionCounts = new Map<string, number>();
+      connectionsData?.forEach(conn => {
+        connectionCounts.set(conn.user_id, (connectionCounts.get(conn.user_id) || 0) + 1);
+        connectionCounts.set(conn.connected_user_id, (connectionCounts.get(conn.connected_user_id) || 0) + 1);
+      });
+
+      // Get user profiles for users with connections
+      const userIds = Array.from(connectionCounts.keys());
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        // Combine connection counts with user names and sort
+        const leaderboardData = profilesData
+          ?.map(profile => ({
+            user_id: profile.user_id,
+            full_name: profile.full_name,
+            connection_count: connectionCounts.get(profile.user_id) || 0
+          }))
+          .sort((a, b) => b.connection_count - a.connection_count)
+          .slice(0, 3);
+
+        setLeaderboard(leaderboardData || []);
+      }
+    } catch (error) {
+      console.error('Error fetching leaderboard:', error);
+    }
+  }, []);
+
   useEffect(() => {
     const initializeDashboard = async () => {
       try {
@@ -152,7 +205,8 @@ export default function DashboardPage() {
 
         await Promise.all([
           fetchConnections(),
-          fetchEvents()
+          fetchEvents(),
+          fetchLeaderboard()
         ]);
       } catch (error) {
         console.error('Error:', error);
@@ -162,7 +216,7 @@ export default function DashboardPage() {
       }
     };
     initializeDashboard();
-  }, [fetchConnections, fetchEvents, router]);
+  }, [fetchConnections, fetchEvents, fetchLeaderboard, router]);
 
   if (loading) {
     return <div className="container mx-auto px-4 py-8">Loading dashboard...</div>;
@@ -187,35 +241,69 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Active Connections</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{stats.activeConnections}</p>
-          </CardContent>
-        </Card>
+        <Link href="/connections?tab=active">
+          <Card className="cursor-pointer hover:bg-purple-50 transition-colors">
+            <CardHeader>
+              <CardTitle>Active Connections</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{stats.activeConnections}</p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Pending Requests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{stats.pendingRequests}</p>
-          </CardContent>
-        </Card>
+        <Link href="/connections?tab=pending">
+          <Card className="cursor-pointer hover:bg-purple-50 transition-colors">
+            <CardHeader>
+              <CardTitle>Pending Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{stats.pendingRequests}</p>
+            </CardContent>
+          </Card>
+        </Link>
         
-        <Card>
-          <CardHeader>
-            <CardTitle>Upcoming Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{upcomingEvents.length}</p>
-          </CardContent>
-        </Card>
+        <Link href="/events">
+          <Card className="cursor-pointer hover:bg-purple-50 transition-colors">
+            <CardHeader>
+              <CardTitle>Upcoming Events</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold">{upcomingEvents.length}</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Connection Leaderboard</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {leaderboard.map((entry, index) => (
+                <div key={entry.user_id} className="flex items-center gap-4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                    index === 0 ? 'bg-yellow-400' :
+                    index === 1 ? 'bg-gray-300' :
+                    'bg-amber-600'
+                  }`}>
+                    <span className="text-white font-bold">{index + 1}</span>
+                  </div>
+                  <div className="flex-grow">
+                    <p className="font-medium">{entry.full_name}</p>
+                    <p className="text-sm text-gray-500">{entry.connection_count} connections</p>
+                  </div>
+                </div>
+              ))}
+              {leaderboard.length === 0 && (
+                <p className="text-gray-500">No connections yet</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle>Upcoming Events</CardTitle>

@@ -84,6 +84,14 @@ export default function FindPartners() {
   }, [router]);
 
   const filteredProfiles = profiles.filter(profile => {
+    // First check if we're already connected with this user
+    const isConnected = connections.some(conn => 
+      (conn.user_id === profile.user_id || conn.connected_user_id === profile.user_id) &&
+      conn.status === 'accepted'
+    );
+
+    if (isConnected) return false;
+
     if (!searchQuery) return true;
     
     const searchLower = searchQuery.toLowerCase();
