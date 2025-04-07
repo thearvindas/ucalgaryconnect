@@ -4,19 +4,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [scrollPosition, setScrollPosition] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrollPosition(window.scrollY);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <div className="min-h-screen bg-white text-gray-900">
       {/* Navigation */}
@@ -153,7 +142,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Share your expertise and learn from others. Whether you're looking to teach or learn, find the perfect match.
+                  Share your expertise and learn from others. Whether you&apos;re looking to teach or learn, find the perfect match.
                 </p>
               </CardContent>
             </Card>
