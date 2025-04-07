@@ -60,8 +60,7 @@ export default function StudyGroups() {
 
   useEffect(() => {
     setGroups(SAMPLE_GROUPS);
-    setLoading(false);
-  }, []);
+  }, [SAMPLE_GROUPS]);
 
   const filteredGroups = groups.filter(group =>
     group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||

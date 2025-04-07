@@ -21,6 +21,9 @@ import {
   XCircle,
   Clock
 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { Loader2 } from 'lucide-react';
 
 interface Connection {
   id: string;
@@ -146,7 +149,7 @@ function ClientConnectionsPage() {
     }
   }, [fetchConnections, currentUserId]);
 
-  const handleAccept = async (connectionId: string) => {
+  const handleConnectionAction = async (connectionId: string, action: 'accept' | 'decline' | 'cancel') => {
     try {
       const supabase = getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
@@ -158,7 +161,7 @@ function ClientConnectionsPage() {
 
       const { error } = await supabase
         .from('connections')
-        .update({ status: 'accepted' })
+        .update({ status: action === 'accept' ? 'accepted' : action === 'decline' ? 'declined' : 'declined' })
         .eq('id', connectionId)
         .eq('connected_user_id', session.user.id);
 
@@ -168,65 +171,13 @@ function ClientConnectionsPage() {
       setConnections(prev => 
         prev.map(conn => 
           conn.id === connectionId 
-            ? { ...conn, status: 'accepted' }
+            ? { ...conn, status: action === 'accept' ? 'accepted' : action === 'decline' ? 'declined' : 'declined' }
             : conn
         )
       );
     } catch (error) {
-      console.error('Error accepting connection:', error);
-      alert('Failed to accept connection request. Please try again.');
-    }
-  };
-
-  const handleDecline = async (connectionId: string) => {
-    try {
-      const supabase = getSupabase();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('connections')
-        .update({ status: 'declined' })
-        .eq('id', connectionId)
-        .eq('connected_user_id', session.user.id);
-
-      if (error) throw error;
-
-      // Update the local state by removing the declined connection
-      setConnections(prev => prev.filter(conn => conn.id !== connectionId));
-    } catch (error) {
-      console.error('Error declining connection:', error);
-      alert('Failed to decline connection request. Please try again.');
-    }
-  };
-
-  const handleCancel = async (connectionId: string) => {
-    try {
-      const supabase = getSupabase();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        router.push('/login');
-        return;
-      }
-
-      const { error } = await supabase
-        .from('connections')
-        .delete()
-        .eq('id', connectionId)
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
-
-      // Update the local state by removing the cancelled connection
-      setConnections(prev => prev.filter(conn => conn.id !== connectionId));
-    } catch (error) {
-      console.error('Error cancelling connection:', error);
-      alert('Failed to cancel connection request. Please try again.');
+      console.error(`Error ${action}ing connection:`, error);
+      alert(`Failed to ${action} connection request. Please try again.`);
     }
   };
 
@@ -350,7 +301,7 @@ function ClientConnectionsPage() {
                         
                         <div className="flex flex-col gap-2">
                           <Button
-                            onClick={() => handleAccept(connection.id)}
+                            onClick={() => handleConnectionAction(connection.id, 'accept')}
                             className="flex items-center gap-2"
                             variant="default"
                           >
@@ -358,7 +309,7 @@ function ClientConnectionsPage() {
                             Accept
                           </Button>
                           <Button
-                            onClick={() => handleDecline(connection.id)}
+                            onClick={() => handleConnectionAction(connection.id, 'decline')}
                             className="flex items-center gap-2"
                             variant="outline"
                           >
@@ -419,7 +370,7 @@ function ClientConnectionsPage() {
                         </div>
                         
                         <Button
-                          onClick={() => handleCancel(connection.id)}
+                          onClick={() => handleConnectionAction(connection.id, 'cancel')}
                           className="flex items-center gap-2"
                           variant="outline"
                         >

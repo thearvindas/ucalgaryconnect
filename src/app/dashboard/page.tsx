@@ -424,24 +424,20 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {leaderboard.map((entry, index) => (
-                <div
-                  key={entry.user_id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                >
+              {leaderboard.map((user, index) => (
+                <div key={user.user_id} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      index === 0 ? 'bg-yellow-100 text-yellow-600' :
-                      index === 1 ? 'bg-gray-100 text-gray-600' :
-                      'bg-orange-100 text-orange-600'
-                    }`}>
-                      {index + 1}
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <span className="text-sm font-medium text-primary">
+                        {index + 1}
+                      </span>
                     </div>
-                    <span className="font-medium">{entry.full_name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-blue-600" />
-                    <span>{entry.connection_count}</span>
+                    <div>
+                      <p className="font-medium">{user.full_name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.connection_count} {user.connection_count === 1 ? 'connection' : 'connections'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
