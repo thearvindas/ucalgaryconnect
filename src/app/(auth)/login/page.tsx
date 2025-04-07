@@ -30,7 +30,7 @@ export default function LoginPage() {
 
       if (error) throw error;
       
-      router.push('/find-partners');
+      router.push('/dashboard');
     } catch (error: unknown) {
       if (error instanceof Error) {
         setError(error.message);

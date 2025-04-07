@@ -57,7 +57,10 @@ export default function DashboardPage() {
         throw error;
       }
 
-      const activeConnections = connectionsData?.length || 0;
+      const activeConnections = connectionsData?.filter(conn => 
+        conn.status === 'accepted'
+      ).length || 0;
+
       const pendingRequests = connectionsData?.filter(conn => 
         conn.status === 'pending' && conn.connected_user_id === session.user.id
       ).length || 0;

@@ -35,6 +35,7 @@ export default function FindPartners() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchType, setSearchType] = useState<'all' | 'courses' | 'interests' | 'skills'>('all');
 
   useEffect(() => {
     const checkSessionAndFetchPartners = async () => {
@@ -84,8 +85,26 @@ export default function FindPartners() {
 
   const filteredProfiles = profiles.filter(profile => {
     if (!searchQuery) return true;
-    const searchableText = `${profile.full_name} ${profile.bio || ''} ${profile.skills.join(' ')}`;
-    return searchableText.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const searchLower = searchQuery.toLowerCase();
+    
+    switch (searchType) {
+      case 'courses':
+        return profile.courses.some(course => 
+          course.toLowerCase().includes(searchLower)
+        );
+      case 'interests':
+        return profile.interests.some(interest => 
+          interest.toLowerCase().includes(searchLower)
+        );
+      case 'skills':
+        return profile.skills.some(skill => 
+          skill.toLowerCase().includes(searchLower)
+        );
+      default:
+        const searchableText = `${profile.full_name} ${profile.bio || ''} ${profile.skills.join(' ')} ${profile.interests.join(' ')} ${profile.courses.join(' ')}`;
+        return searchableText.toLowerCase().includes(searchLower);
+    }
   });
 
   const getConnectionStatus = (profileId: string) => {
@@ -138,14 +157,30 @@ export default function FindPartners() {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-purple-600 mb-8">Find Study Partners</h1>
       
-      <div className="mb-6">
-        <Input
-          type="text"
-          placeholder="Search by name, skills, or interests..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-md"
-        />
+      <div className="mb-6 space-y-4">
+        <div className="flex gap-4">
+          <Input
+            type="text"
+            placeholder="Search..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md"
+          />
+          <select
+            value={searchType}
+            onChange={(e) => setSearchType(e.target.value as 'all' | 'courses' | 'interests' | 'skills')}
+            className="px-4 py-2 border rounded-md"
+          >
+            <option value="all">All</option>
+            <option value="courses">Courses</option>
+            <option value="interests">Interests</option>
+            <option value="skills">Skills</option>
+          </select>
+        </div>
+        <p className="text-sm text-gray-500">
+          {searchType === 'all' ? 'Searching across all fields' : 
+           `Searching in ${searchType}`}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
