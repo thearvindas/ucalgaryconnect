@@ -22,9 +22,8 @@ interface Event {
 }
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const fetchEvents = useCallback(async () => {
@@ -46,13 +45,13 @@ export default function EventsPage() {
 
       if (error) {
         console.error('Error fetching events:', error);
-        setEvents([]);
+        setUpcomingEvents([]);
         return;
       }
 
       if (!eventsData) {
         console.log('No events data returned');
-        setEvents([]);
+        setUpcomingEvents([]);
         return;
       }
 
@@ -69,10 +68,10 @@ export default function EventsPage() {
       }));
 
       console.log('Formatted events:', formattedEvents);
-      setEvents(formattedEvents);
+      setUpcomingEvents(formattedEvents);
     } catch (error) {
       console.error('Unexpected error:', error);
-      setEvents([]);
+      setUpcomingEvents([]);
     } finally {
       setLoading(false);
     }
@@ -92,16 +91,6 @@ export default function EventsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-lg text-red-500">{error}</div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex flex-col space-y-2">
@@ -110,8 +99,8 @@ export default function EventsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.length > 0 ? (
-          events.map((event, index) => (
+        {upcomingEvents.length > 0 ? (
+          upcomingEvents.map((event, index) => (
             <motion.div
               key={event.id}
               initial={{ opacity: 0, y: 20 }}
