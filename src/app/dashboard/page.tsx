@@ -138,62 +138,78 @@ export default function DashboardPage() {
   }, [router]);
 
   const fetchLeaderboard = useCallback(async () => {
+    console.log('Fetching global leaderboard data...'); 
     try {
-      const supabase = getSupabase();
+      // Use a clean Supabase client instance for clarity, though default should work
+      const supabase = getSupabase(); 
       
-      // Get all accepted connections globally
+      // 1. Fetch ALL accepted connections
+      console.log('Querying ALL accepted connections...');
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('connections')
-        .select(`
-          id,
-          user_id,
-          connected_user_id,
-          status,
-          created_at
-        `)
+        .select('user_id, connected_user_id') // Only select needed columns
         .eq('status', 'accepted');
 
       if (connectionsError) {
-        console.error('Error fetching connections:', connectionsError);
-        throw connectionsError;
+        console.error('Error fetching connections for leaderboard:', connectionsError);
+        // Optionally set an error state for the leaderboard component
+        setLeaderboard([]); 
+        return; 
+      }
+      console.log('Raw accepted connections received:', connectionsData);
+
+      if (!connectionsData) {
+          console.log('No accepted connections data found.');
+          setLeaderboard([]);
+          return;
       }
 
-      // Count active connections for each user
+      // 2. Count connections per user
       const connectionCounts = new Map<string, number>();
-      connectionsData?.forEach(conn => {
-        // Each connection counts as 1 for both users involved
+      connectionsData.forEach(conn => {
         connectionCounts.set(conn.user_id, (connectionCounts.get(conn.user_id) || 0) + 1);
         connectionCounts.set(conn.connected_user_id, (connectionCounts.get(conn.connected_user_id) || 0) + 1);
       });
+      console.log('Calculated connection counts:', Object.fromEntries(connectionCounts));
 
-      // Get all profiles
+      // 3. Fetch ALL profiles needed for the leaderboard (user_id, full_name)
+      console.log('Querying ALL profiles for leaderboard...');
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('user_id, full_name');
+        .select('user_id, full_name'); // Only select needed columns
 
       if (profilesError) {
-        console.error('Error fetching profiles:', profilesError);
-        throw profilesError;
+        console.error('Error fetching profiles for leaderboard:', profilesError);
+        setLeaderboard([]); 
+        return;
+      }
+       console.log('Raw profiles data received:', profilesData);
+
+       if (!profilesData) {
+          console.log('No profiles data found.');
+          setLeaderboard([]);
+          return;
       }
 
-      // Combine connection counts with user names and sort by connection count
+      // 4. Combine, Sort, and Slice
       const leaderboardData = profilesData
-        ?.map(profile => {
-          const count = connectionCounts.get(profile.user_id) || 0;
-          return {
-            user_id: profile.user_id,
-            full_name: profile.full_name,
-            connection_count: count
-          };
-        })
-        .sort((a, b) => b.connection_count - a.connection_count)
-        .slice(0, 3); // Get top 3 users
+        .map(profile => ({
+          user_id: profile.user_id,
+          full_name: profile.full_name || 'Unnamed User', // Handle potential null names
+          connection_count: connectionCounts.get(profile.user_id) || 0
+        }))
+        .sort((a, b) => b.connection_count - a.connection_count) // Sort descending by count
+        .slice(0, 3); // Get top 3
 
-      setLeaderboard(leaderboardData || []);
+      console.log('Final leaderboard data:', leaderboardData);
+      setLeaderboard(leaderboardData);
+      console.log('Leaderboard state updated.');
+
     } catch (error) {
-      console.error('Error fetching leaderboard:', error);
+      console.error('Unexpected error fetching leaderboard:', error);
+      setLeaderboard([]); // Ensure leaderboard is cleared on error
     }
-  }, []);
+  }, []); // No dependencies, truly global fetch logic
 
   useEffect(() => {
     const initializeDashboard = async () => {
