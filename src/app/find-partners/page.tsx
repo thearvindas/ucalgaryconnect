@@ -115,11 +115,15 @@ export default function FindPartners() {
     }
   });
 
-  const getConnectionStatus = (profileId: string) => {
+  const getConnectionStatus = (profileId: string): 'accepted' | 'pending' | 'declined' | 'Request Sent' | 'Request Received' | null => {
     const connection = connections.find(conn => 
       (conn.user_id === profileId || conn.connected_user_id === profileId)
     );
-    return connection?.status || null;
+    if (!connection) return null;
+    if (connection.status === 'pending') {
+      return connection.user_id === profileId ? 'Request Sent' : 'Request Received';
+    }
+    return connection.status;
   };
 
   const handleConnect = async (partnerId: string) => {

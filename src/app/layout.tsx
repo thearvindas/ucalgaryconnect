@@ -24,8 +24,7 @@ export default function RootLayout({
         </main>
         <footer className="bg-white border-t py-8">
           <div className="container mx-auto px-4 text-center text-gray-600">
-            <p>&copy; 2024 UCalgaryConnect. All rights reserved.</p>
-            <p className="mt-2">Contact us: support@ucalgaryconnect.ca</p>
+            <p>Built by Arvin, Graham, Jasper, Joshua, and Rebecca for the ENTI 674 class at the Haskayne School of Business, University of Calgary.</p>
           </div>
         </footer>
       </body>

@@ -16,11 +16,8 @@ export default function Home() {
               <span className="text-purple-600">UCalgaryConnect</span>
             </Link>
             <div className="flex items-center space-x-6">
-              <Link href="/find-partners" className="text-gray-600 hover:text-gray-900 transition-colors">
-                Find Partners
-              </Link>
-              <Link href="/events" className="text-gray-600 hover:text-gray-900 transition-colors">
-                Events
+              <Link href="/login" className="text-gray-600 hover:text-gray-900 transition-colors">
+                Login
               </Link>
               <Link href="/register">
                 <Button className="bg-purple-600 hover:bg-purple-700 text-white">

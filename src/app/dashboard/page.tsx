@@ -16,6 +16,7 @@ import {
   Clock
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { format } from 'date-fns';
 
 interface Profile {
   id: string;
@@ -108,7 +109,7 @@ export default function DashboardPage() {
       const { data: eventsData, error } = await supabase
         .from('events')
         .select('*')
-        .order('created_at', { ascending: true });
+        .order('start_date', { ascending: true });
 
       if (error) {
         console.error('Error fetching events:', error);
@@ -116,15 +117,11 @@ export default function DashboardPage() {
         return;
       }
 
-      const sortedEvents = eventsData?.sort((a, b) => 
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-
-      const formattedEvents = sortedEvents?.map(event => ({
+      const formattedEvents = eventsData?.map(event => ({
         id: event.id,
         title: event.title,
-        date: new Date(event.created_at.split('T')[0]),
-        time: event.time,
+        date: new Date(event.start_date),
+        time: format(new Date(event.start_date), 'hh:mm a'),
         location: event.location || 'Location TBD',
         description: event.description,
         created_by: event.created_by,
@@ -144,7 +141,7 @@ export default function DashboardPage() {
     try {
       const supabase = getSupabase();
       
-      // Get all accepted connections with a more explicit query
+      // Get all accepted connections globally
       const { data: connectionsData, error: connectionsError } = await supabase
         .from('connections')
         .select(`
@@ -161,10 +158,6 @@ export default function DashboardPage() {
         throw connectionsError;
       }
 
-      // Log the raw SQL query for debugging
-      console.log('Raw accepted connections:', connectionsData);
-      console.log('Number of accepted connections:', connectionsData?.length || 0);
-
       // Count active connections for each user
       const connectionCounts = new Map<string, number>();
       connectionsData?.forEach(conn => {
@@ -172,9 +165,6 @@ export default function DashboardPage() {
         connectionCounts.set(conn.user_id, (connectionCounts.get(conn.user_id) || 0) + 1);
         connectionCounts.set(conn.connected_user_id, (connectionCounts.get(conn.connected_user_id) || 0) + 1);
       });
-
-      // Log all connection counts
-      console.log('Connection counts by user:', Object.fromEntries(connectionCounts));
 
       // Get all profiles
       const { data: profilesData, error: profilesError } = await supabase
@@ -186,14 +176,10 @@ export default function DashboardPage() {
         throw profilesError;
       }
 
-      // Log all profiles
-      console.log('All profiles:', profilesData);
-
       // Combine connection counts with user names and sort by connection count
       const leaderboardData = profilesData
         ?.map(profile => {
           const count = connectionCounts.get(profile.user_id) || 0;
-          console.log(`User ${profile.full_name} (${profile.user_id}) has ${count} connections`);
           return {
             user_id: profile.user_id,
             full_name: profile.full_name,
@@ -203,18 +189,7 @@ export default function DashboardPage() {
         .sort((a, b) => b.connection_count - a.connection_count)
         .slice(0, 3); // Get top 3 users
 
-      console.log('Final leaderboard data:', leaderboardData);
-
       setLeaderboard(leaderboardData || []);
-
-      // Double check the database directly
-      const { data: checkData } = await supabase
-        .from('connections')
-        .select('status')
-        .eq('status', 'accepted');
-      
-      console.log('Double check accepted connections:', checkData);
-      
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     }

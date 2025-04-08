@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Clock, ChevronRight, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getSupabase } from '@/lib/supabase';
+import { format } from 'date-fns';
 
 interface Event {
   id: string;
@@ -26,80 +27,60 @@ export default function EventsPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const supabase = getSupabase();
-
-        // First check if user is authenticated
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        // Log session check results
-        console.log('Session check:', { session, sessionError });
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          setError('Authentication error. Please try logging in again.');
-          return;
-        }
-
-        if (!session) {
-          console.log('No active session, redirecting to login');
-          router.push('/login');
-          return;
-        }
-
-        // Log successful authentication
-        console.log('Authenticated as:', session.user.email);
-
-        // Fetch events with detailed error logging
-        console.log('Fetching events...');
-        const { data: eventsData, error: eventsError } = await supabase
-          .from('events')
-          .select('*')
-          .order('created_at', { ascending: true });
-
-        // Log raw response
-        console.log('Supabase response:', { eventsData, eventsError });
-
-        if (eventsError) {
-          console.error('Error fetching events:', eventsError);
-          setError(`Failed to fetch events: ${eventsError.message}`);
-          return;
-        }
-
-        if (!eventsData) {
-          console.log('No events data returned');
-          setEvents([]);
-          return;
-        }
-
-        // Format the events data
-        const formattedEvents = eventsData.map(event => ({
-          id: event.id,
-          title: event.title,
-          date: new Date(event.created_at.split('T')[0]),
-          time: event.time,
-          location: event.location,
-          description: event.description,
-          created_by: event.created_by,
-          created_at: event.created_at,
-          url: event.url ? (event.url.startsWith('http://') || event.url.startsWith('https://') ? event.url : `https://${event.url}`) : null
-        }));
-
-        console.log('Formatted events:', formattedEvents);
-        setEvents(formattedEvents);
-      } catch (error) {
-        console.error('Unexpected error:', error);
-        setError('An unexpected error occurred while fetching events');
-      } finally {
-        setLoading(false);
+  const fetchEvents = useCallback(async () => {
+    try {
+      setLoading(true);
+      const supabase = getSupabase();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('No active session, redirecting to login');
+        router.push('/login');
+        return;
       }
-    };
 
-    fetchEvents();
+      const { data: eventsData, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('start_date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching events:', error);
+        setEvents([]);
+        return;
+      }
+
+      if (!eventsData) {
+        console.log('No events data returned');
+        setEvents([]);
+        return;
+      }
+
+      const formattedEvents = eventsData.map(event => ({
+        id: event.id,
+        title: event.title,
+        date: new Date(event.start_date),
+        time: format(new Date(event.start_date), 'hh:mm a'),
+        location: event.location || 'Location TBD',
+        description: event.description,
+        created_by: event.created_by,
+        created_at: event.created_at,
+        url: event.url ? (event.url.startsWith('http://') || event.url.startsWith('https://') ? event.url : `https://${event.url}`) : null
+      }));
+
+      console.log('Formatted events:', formattedEvents);
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
   }, [router]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   if (loading) {
     return (
