@@ -17,8 +17,6 @@ import {
   BookOpen,
   Briefcase,
   Heart,
-  CheckCircle,
-  XCircle,
   Clock
 } from 'lucide-react';
 
