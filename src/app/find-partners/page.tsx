@@ -36,6 +36,8 @@ export default function FindPartners() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchType, setSearchType] = useState<'all' | 'courses' | 'interests' | 'skills'>('all');
+  const [connectingTo, setConnectingTo] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkSessionAndFetchPartners = async () => {
@@ -47,6 +49,9 @@ export default function FindPartners() {
         }
 
         const supabase = getSupabase();
+        
+        // Store the current user's ID in state
+        setCurrentUserId(session.user.id);
         
         // Fetch all connections
         const { data: connectionsData, error: connectionsError } = await supabase
@@ -119,15 +124,19 @@ export default function FindPartners() {
     const connection = connections.find(conn => 
       (conn.user_id === profileId || conn.connected_user_id === profileId)
     );
+
     if (!connection) return null;
+
     if (connection.status === 'pending') {
-      return connection.user_id === profileId ? 'Request Sent' : 'Request Received';
+      // If the current user is the one who sent the request
+      return connection.user_id === currentUserId ? 'Request Sent' : 'Request Received';
     }
     return connection.status;
   };
 
   const handleConnect = async (partnerId: string) => {
     try {
+      setConnectingTo(partnerId);
       const supabase = getSupabase();
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -154,6 +163,8 @@ export default function FindPartners() {
     } catch (error) {
       console.error('Error connecting with partner:', error);
       alert('Failed to send connection request. Please try again.');
+    } finally {
+      setConnectingTo(null);
     }
   };
 
@@ -198,6 +209,7 @@ export default function FindPartners() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProfiles.map(profile => {
           const connectionStatus = getConnectionStatus(profile.user_id);
+          const isConnecting = connectingTo === profile.user_id;
           
           return (
             <Card key={profile.id} className="h-full flex flex-col">
@@ -248,20 +260,37 @@ export default function FindPartners() {
                 </div>
               </CardContent>
               <CardContent>
-                {connectionStatus === 'accepted' ? (
-                  <Button className="w-full bg-green-600 hover:bg-green-700" disabled>
+                {connectionStatus === 'Request Sent' ? (
+                  <Button 
+                    className="w-full" 
+                    variant="outline" 
+                    disabled
+                  >
+                    request sent
+                  </Button>
+                ) : connectionStatus === 'Request Received' ? (
+                  <Button 
+                    className="w-full" 
+                    variant="outline" 
+                    disabled
+                  >
+                    request received
+                  </Button>
+                ) : connectionStatus === 'accepted' ? (
+                  <Button 
+                    className="w-full" 
+                    variant="outline" 
+                    disabled
+                  >
                     Connected
                   </Button>
-                ) : connectionStatus === 'pending' ? (
-                  <Button className="w-full bg-yellow-600 hover:bg-yellow-700" disabled>
-                    Request Sent
-                  </Button>
                 ) : (
-                  <Button 
-                    className="w-full bg-purple-600 hover:bg-purple-700"
+                  <Button
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white"
                     onClick={() => handleConnect(profile.user_id)}
+                    disabled={isConnecting}
                   >
-                    Connect
+                    {isConnecting ? 'Sending Request...' : 'Connect'}
                   </Button>
                 )}
               </CardContent>

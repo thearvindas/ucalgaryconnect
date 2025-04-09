@@ -301,22 +301,21 @@ function ConnectionsContent() {
                         </div>
                         
                         <div className="flex flex-col gap-2">
-                          <Button
-                            onClick={() => handleConnectionAction(connection.id, 'accept')}
-                            className="flex items-center gap-2"
-                            variant="default"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                            Accept
-                          </Button>
-                          <Button
-                            onClick={() => handleConnectionAction(connection.id, 'decline')}
-                            className="flex items-center gap-2"
-                            variant="outline"
-                          >
-                            <XCircle className="h-4 w-4" />
-                            Decline
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleConnectionAction(connection.id, 'accept')}
+                              className="bg-purple-600 hover:bg-purple-700 text-white"
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              onClick={() => handleConnectionAction(connection.id, 'decline')}
+                              variant="outline"
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Decline
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
